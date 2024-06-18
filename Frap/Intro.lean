@@ -106,7 +106,7 @@ theorem and_elim_l (p q : Prop) : p ∧ q → p := by
 /-
 exercise (1-star)
 -/
-theorem and_elim_r (p q : Prop) : p ∧ q → p := by
+theorem and_elim_r (p q : Prop) : p ∧ q → q := by
   sorry
 
 /-
@@ -118,7 +118,7 @@ Applying the assumption _unifies_ the placeholder with the right-hand side of th
 theorem and_elim_l' (p q : Prop) : p ∧ q → p := by
   intro hand
   apply And.left
-  apply hand
+  exact hand
 /-
 In the example above, we already know which assumption we want to use `And.left` on, so we can provide the assumption for the `apply` tactic to work with immediately.
 -/
