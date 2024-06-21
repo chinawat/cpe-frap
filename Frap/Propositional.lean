@@ -71,15 +71,6 @@ theorem and_associative (p q r : Prop) : (p ∧ q) ∧ r ↔ p ∧ (q ∧ r) := 
   sorry
 
 /-
-If we have an equivalence in the assumption, we can deconstruct it in the same way as a conjuction.
--/
-
-example (p q : Prop) : (p ↔ q) → (p → q) := by
-  intro hiff
-  cases hiff with
-  | intro hpq hqp => exact hpq
-
-/-
 ## Rewriting proof terms using previously proven results
 
 Often in our proof, we'll need to use the same tactic sequence as in a prior proof.
@@ -123,7 +114,8 @@ Disjunction symbol (∨) can be typed using `\or` shortcut.
 
 ## Proving disjunctions
 
-When the proof goal is a disjunction, it suffices to proof one of the disjuncts.Here, we can apply the `Or.inl` or `Or.inr` tactic to choose the side we want to prove.
+When the proof goal is a disjunction, it suffices to proof one of the disjuncts.
+Here, we can apply the `Or.inl` or `Or.inr` tactic to choose the side we want to prove.
 -/
 
 #check Or.inl
@@ -166,7 +158,7 @@ That way, you can understand the proof better.
 If we have a disjunction in assumptions and want to use it, we don't know exactly which disjunct is true.
 Here, we have to use _proof by cases_ to ensure that, for each disjunct, ourgoal can be satisfied if the disjunct is true.
 Use the `cases` tactic like we did with conjunctions, but now there are two cases, one per disjunct.
-We introduct the assumption of the left disjunct with `inl`, followed by the name of the hypothesis; similarly, we can use `inr` for the right disjunct.
+We introduce the assumption of the left disjunct with `inl`, followed by the name of the hypothesis; similarly, we can use `inr` for the right disjunct.
 -/
 
 theorem or_elim (p q r : Prop) : p ∨ q → (p → r) → (q → r) → r := by
@@ -223,6 +215,9 @@ theorem ex_falso_quodlibet (p : Prop) : False → p := by
   intro hf
   exfalso
   exact hf
+
+example (p : Prop) : False → p := by
+  intro; exfalso; assumption
 
 example (p q : Prop) : p ∧ ¬p → q := by
   intro h
