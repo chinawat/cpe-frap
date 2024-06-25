@@ -146,7 +146,7 @@ example (a b c d : α) : r a b → r c b → r c d → r a d  := by
     . exact hcd
 end relations
 
-variable (α : Type) (p q : α → Prop)
+variable (α : Type) (p q : α → Prop) (r : Prop)
 
 example : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) := by
   constructor  -- can be used in place of `apply Iff.intro`
@@ -191,6 +191,7 @@ exercise (1-star)
 -/
 example : (∀ x, r → p x) ↔ (r → ∀ x, p x) := by
   sorry
+
 /-
 ## Existential quantifier
 
@@ -261,6 +262,15 @@ Let's try some more proofs having ∃ in both the goal and hypothesis.
 -/
 
 example : (∃ x, p x ∧ q x) → ∃ x, q x ∧ p x := by
+  intro ⟨x, ⟨hp ,hq⟩⟩
+  exists x
+
+/-
+In the proof above, the `exists` tactic automatically takes care of the rest of the proof.
+Without such tactic, the proof would look like follows.
+-/
+
+example : (∃ x, p x ∧ q x) → ∃ x, q x ∧ p x := by
   intro ⟨x, ⟨hp, hq⟩⟩
   apply Exists.intro
   apply And.intro
@@ -284,8 +294,8 @@ example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := by
     | inr hq => right; exists x
   . intro h
     cases h with
-    | inl hp => obtain ⟨x, hpx⟩ := hp; exists x; left; assumption
-    | inr hq => obtain ⟨x, hqx⟩ := hq; exists x; right; assumption
+    | inl hp => obtain ⟨x, hp'⟩ := hp; exists x; left; assumption
+    | inr hq => obtain ⟨x, hq'⟩ := hq; exists x; right; assumption
 
 /-
 exercise (1-star)
