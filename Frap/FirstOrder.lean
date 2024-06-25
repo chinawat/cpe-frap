@@ -177,11 +177,26 @@ example : (∀ x, p x) ∨ (∀ x, q x) → ∀ x, p x ∨ q x := by
   sorry
 
 /-
+It is often possible to bring a component of a formula outside a universal quantifier, when it does not depend on the quantified variable.
+-/
+
+/-
+exercise (1-star)
+-/
+example : (∀ x, p x) ∨ r → (∀ x, p x ∨ r)  := by
+  sorry
+
+/-
+exercise (1-star)
+-/
+example : (∀ x, r → p x) ↔ (r → ∀ x, p x) := by
+  sorry
+/-
 ## Existential quantifier
 
 The existential quantifier (∃) can be typed using `\exists` shortcut.
 
-An existentially quantified statement `∃ x : α, p x` is true when there is an `x : α` such that `p x` holds.
+An existentially quantified statement `∃ x : α, p x` is true when there is an `x : α` (an element `x` of type `α`) such that `p x` holds.
 
 To prove that an existentially quantified statement holds, we use the ∃-introduction rule, which states that, if there is a term `t : α` for which we can prove that `p t` holds, then we have a proof of `∃ x : α, p x` by forgetting the details about the evidence `t`.
 This can be seen as an _information hiding_ operation.
@@ -295,6 +310,77 @@ example : (∃ x, r → p x) → (r → ∃ x, p x) := by
   sorry
 
 end quantifiers
+
+section equality
+/-
+## Equality
+
+Equality is one of the most fundamental notions in formal reasoning.
+It states when two things are equal, and hence we can _substitute_ one for the other.
+Equality allows us to perform _equational reasoning_.
+-/
+
+#check Eq
+
+/-
+Equality is an equivalence relation, i.e., it is reflexive, symmetric, and transitive.
+We can apply these rules within a proof.
+-/
+
+#check Eq.refl
+#check Eq.symm
+#check Eq.trans
+
+/-
+We can specialize the example from an earlier section to the equality relation:
+-/
+variable (α : Type) (a b c d : α)  -- a, b, c, d are elements of some type
+
+example : a = b → c = b → c = d → a = d  := by
+  intro hab hcb hcd
+  apply Eq.trans
+  . exact hab
+  . apply Eq.trans
+    . apply Eq.symm
+      exact hcb
+    . exact hcd
+
+/-
+The power of equality lies in substitution.
+We can apply the `Eq.subst` rule
+-/
+
+#check Eq.subst
+
+example (α : Type) (a b : α) (p : α → Prop) : a = b → p a → p b := by
+  intro heq hpa
+  apply Eq.subst
+  . exact heq
+  . exact hpa
+
+/-
+For many rules we have seen, including `Eq.subst`, we can view them as a method in the objec-oriented-programming sense.
+The first argument to the method is in fact the receiver object, and we can name it before the method name.
+This automatically takes care of the first subgoal (which appears last in the proof).
+-/
+
+example (α : Type) (a b : α) (p : α → Prop) : a = b → p a → p b := by
+  intro heq hpa
+  apply heq.subst
+  exact hpa
+
+/-
+exercise (1-star)
+Prove the following substitution property.
+-/
+example (α β : Type) (a b : α) (f g : α → β) : a = b → f = g → f a = g b := by
+  sorry
+
+end equality
+
+/-
+We will look at more basic types and what we can do with them next time.
+-/
 
 /-
 ## references
