@@ -92,8 +92,8 @@ namespace Nat
 
 def add (m n : Nat) : Nat :=
   match n with
-  | Nat.zero   => m
-  | Nat.succ n => Nat.succ (add m n)
+  | zero   => m
+  | succ n => succ (add m n)
 
 /-
 Multiplication is defined similarly.
@@ -101,9 +101,12 @@ Multiplication is defined similarly.
 
 def mul (m n : Nat) : Nat :=
   match n with
-  | Nat.zero   => Nat.zero
-  | Nat.succ n => add (mul m n) m
+  | zero   => zero
+  | succ n => add (mul m n) m
 
+/-
+The following declarations let us use `+` and `*` (almost, for now) interchangeably with `add` and `mul`.
+-/
 instance : Add Nat where
   add := add
 instance : Mul Nat where
@@ -142,7 +145,7 @@ open Nat
 end opendemo
 
 /-
-For now, to avoid mixing up what we want to prove and what we already know, we will work with our own Nat.
+But for now, to avoid mixing up what we want to prove and what Leans' `Nat` has already given us, we will work exclusively with our own `Nat`.
 -/
 
 namespace Hidden
@@ -279,6 +282,9 @@ theorem mul_zero (m : Nat) : m * zero = zero := by
 theorem mul_succ (m n : Nat) : m * succ n = add (m * n) m := by
   rfl
 
+theorem add_infix (m n : Nat) : m.add n = m + n := by
+  rfl
+
 theorem mul_assoc (m n k : Nat) : m * n * k = m * (n * k) := by
   induction k with
   | zero =>
@@ -288,9 +294,33 @@ theorem mul_assoc (m n k : Nat) : m * n * k = m * (n * k) := by
   | succ k' ih =>
       rw [mul_succ]
       rw [mul_succ]
+      rw [add_infix]
+      rw [add_infix]
+      have h (m n k : Nat) : m * (n + k) = m * n + m * k := by
+        -- distributive property from left
+        induction k with
+        | zero =>
+            rw [mul_zero]
+            rw [add_zero]
+            rw [add_zero]
+        | succ k' ih =>
+            rw [mul_succ]
+            rw [add_succ]
+            rw [mul_succ]
+            rw [add_infix]
+            rw [add_infix]
+            rw [ih]
+            rw [add_assoc]
+      rw [h]
       rw [ih]
-      rw [← mul_succ]
-      sorry
+
+/-
+exercise (3-star)
+Prove that multiplication is commutative.
+Add auxiliary theorems as necessary.
+-/
+theorem mul_comm (m n : Nat) : m * n = n * m := by
+  sorry
 
 end Nat
 end Hidden

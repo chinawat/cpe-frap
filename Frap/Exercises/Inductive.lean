@@ -1,4 +1,4 @@
--- structural induction exercises
+-- induction exercises
 
 namespace Hidden
 
