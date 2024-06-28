@@ -8,7 +8,7 @@ variable (α : Type) (a b c d : α)  -- a, b, c, d are elements of some type
 Recall our equality proof from last time.
 -/
 
-example : a = b → c = b → c = d → a = d  := by
+example : a = b → c = b → c = d → a = d := by
   intro hab hcb hcd
   apply Eq.trans
   . exact hab
@@ -30,7 +30,7 @@ Be default, it rewrites the left-hand side with the right-hand side.
 For right-to-left rewriting, a left arrow needs to be indicated before the hypothesis (`←`, typed with `\<-` shortcut) .
 -/
 
-example : a = b → c = b → c = d → a = d  := by
+example : a = b → c = b → c = d → a = d := by
   intro hab hcb hcd
   rw [hab]
   rw [← hcd]
@@ -92,8 +92,8 @@ namespace Nat
 
 def add (m n : Nat) : Nat :=
   match n with
-  | zero   => m
-  | succ n => succ (add m n)
+  | zero    => m
+  | succ n' => succ (add m n')
 
 /-
 Multiplication is defined similarly.
@@ -101,8 +101,8 @@ Multiplication is defined similarly.
 
 def mul (m n : Nat) : Nat :=
   match n with
-  | zero   => zero
-  | succ n => add (mul m n) m
+  | zero    => zero
+  | succ n' => add (mul m n') m
 
 /-
 The following declarations let us use `+` and `*` (almost, for now) interchangeably with `add` and `mul`.
@@ -169,7 +169,9 @@ Again, Lean has already proven these facts for us.
 -/
 
 #check Nat.add_zero
+#print Nat.add_zero
 #check Nat.add_succ
+#print Nat.add_succ
 
 /-
 ## Structural induction
@@ -200,14 +202,9 @@ Addition is associative.
 
 theorem add_assoc (m n k : Nat) : m + n + k = m + (n + k) := by
   induction k with
-  | zero =>
-      rw [add_zero]
-      rw [add_zero]
+  | zero => rfl
   | succ k' ih =>
-      rw [add_succ]
-      rw [add_succ]
-      rw [add_succ]
-      rw [ih]
+      rw [add_succ, add_succ, add_succ, ih]
 
 /-
 Now, suppose we want to prove that addition is commutative.
@@ -216,11 +213,9 @@ Now, suppose we want to prove that addition is commutative.
 example (m n : Nat) : m + n = n + m := by
   induction n with
   | zero =>
-      rw [add_zero]
-      rw [zero_add]
+      rw [zero_add, add_zero]
   | succ n' ih =>
-      rw [add_succ]
-      rw [ih]
+      rw [add_succ, ih]
       sorry
 
 /-
@@ -231,13 +226,9 @@ We prove this by structural induction on n.
 
 theorem succ_add (m n : Nat) : succ (m + n) = succ m + n := by
   induction n with
-  | zero =>
-      rw [add_zero]
-      rw [add_zero]
+  | zero => rfl
   | succ n' ih =>
-      rw [add_succ]
-      rw [add_succ]
-      rw [ih]
+      rw [add_succ, add_succ, ih]
 
 theorem add_comm (m n : Nat) : m + n = n + m := by
   induction n with
@@ -287,32 +278,17 @@ theorem add_infix (m n : Nat) : m.add n = m + n := by
 
 theorem mul_assoc (m n k : Nat) : m * n * k = m * (n * k) := by
   induction k with
-  | zero =>
-      rw [mul_zero]
-      rw [mul_zero]
-      rw [mul_zero]
+  | zero => rfl
   | succ k' ih =>
-      rw [mul_succ]
-      rw [mul_succ]
-      rw [add_infix]
-      rw [add_infix]
-      have h (m n k : Nat) : m * (n + k) = m * n + m * k := by
+      rw [mul_succ, mul_succ, ih, add_infix, add_infix]
+      have nat_distrib (m n k : Nat)
+            : m * n + m * k = m * (n + k) := by
         -- distributive property from left
         induction k with
-        | zero =>
-            rw [mul_zero]
-            rw [add_zero]
-            rw [add_zero]
+        | zero => rfl
         | succ k' ih =>
-            rw [mul_succ]
-            rw [add_succ]
-            rw [mul_succ]
-            rw [add_infix]
-            rw [add_infix]
-            rw [ih]
-            rw [add_assoc]
-      rw [h]
-      rw [ih]
+            rw [mul_succ, add_succ, mul_succ, add_infix, add_infix, ← add_assoc, ih]
+      rw [nat_distrib]
 
 /-
 exercise (3-star)
