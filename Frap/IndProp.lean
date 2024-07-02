@@ -24,8 +24,8 @@ You can deduce facts from the hypothesis, prove something that may be helpful to
 
 example (p q r : Prop) : (p → q) → (q → r) → p → r := by
   intro hpq hqr hp
-  have hq : q := by apply hpq; apply hp
-  have hr : r := by apply hqr; apply hq
+  have hq : q := by apply hpq; exact hp
+  have hr : r := by apply hqr; exact hq
   exact hr
 
 /-
