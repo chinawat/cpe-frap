@@ -61,7 +61,7 @@ open Nat  -- Lean's provided natural number
 
 inductive Even : Nat → Prop where
   | ev_zero : Even 0
-  | ev_add_two (n : Nat): Even n → Even (n + 2)
+  | ev_add_two (n : Nat) : Even n → Even (n + 2)
 
 /-
 We can apply these constructors in simple proofs, e.g., that `4` is even, and that the result of doubling any natural number is even.
@@ -81,11 +81,11 @@ def double (n : Nat) : Nat :=
 
 theorem ev_double (n : Nat) : Even (double n) := by
   induction n with
-  | zero =>
-      apply ev_zero
+  | zero => exact ev_zero
   | succ n' ih =>
+      -- rw [double]
       apply ev_add_two
-      apply ih
+      exact ih
 
 /-
 In fact, all the logical connectives are defined inductively (except for implications and universal quantification, which are embedded into the proof engine directly).
@@ -133,15 +133,15 @@ theorem ev_inversion (n : Nat)
   . intro hE
     cases hE with
     | ev_zero => left; rfl
-    | ev_add_two n' hE' => right; exists n'
+    | ev_add_two n' hEn' => right; exists n'
   . intro hor
     cases hor with
-    | inl h0 => rw [h0]; apply ev_zero
-    | inr hE =>
-        obtain ⟨n', ⟨heq, hE'⟩⟩ := hE
+    | inl h0 => rw [h0]; exact ev_zero
+    | inr h' =>
+        obtain ⟨n', ⟨heq, hEn'⟩⟩ := h'
         rw [heq]
         apply ev_add_two
-        assumption
+        exact hEn'
 
 /-
 When using `cases` on evidence, Lean attempts to deduce the premise for the evidence.
@@ -154,7 +154,7 @@ Therefore, we only need to work on the other case, `ev_add_two`
 theorem evSS_ev (n : Nat) : Even (succ (succ n)) → Even n := by
   intro h
   cases h with
-  | ev_add_two n' hn' => assumption
+  | ev_add_two n' hEn' => exact hEn'
 
 /-
 We can prove that `1` is not even by using the `ev_inversion` fact from above, along with some more facts from the `Nat` namespace.
