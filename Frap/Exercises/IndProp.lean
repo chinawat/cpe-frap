@@ -7,8 +7,8 @@ We reuse the list definition and append function from last exercise.
 -/
 
 inductive List (α : Type u) where
-| nil  : List α
-| cons : α → List α → List α
+  | nil  : List α
+  | cons : α → List α → List α
 
 namespace List
 
