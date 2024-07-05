@@ -49,10 +49,18 @@ def insert {α : Type u} (x : Nat) (v : α) (t : Tree α) : Tree α :=
 ## Binary search tree invariant
 -/
 
+/-
+First, we define an inductive predicate stating that a given predicate holds for a tree when the predicate holds for every node of the tree.
+-/
+
 inductive ForallTree {α : Type u} (p : Nat → α → Prop) : Tree α → Prop where
   | empty : ForallTree p empty
   | tree : ∀ l k v r,
       p k v → ForallTree p l → ForallTree p r → ForallTree p (tree l k v r)
+
+/-
+Now, we define the _binary search tree_ property.
+-/
 
 inductive BST {α : Type u} : Tree α → Prop where
   | empty : BST empty
@@ -85,14 +93,17 @@ example : BST ex_tree := by
     . constructor
 
 /-
+At this point, our proof starts to get mundane.
+It is better to shorten such proofs.
+Next, we will see some approaches that help with this.
+-/
+
+/-
 Tactic `t1 <;> t2` applies tactic `t1` to the current goal, and for each subgoal generated, applies tactic `t2`.
 -/
 
 example : BST ex_tree := by
   constructor <;> constructor <;> constructor <;> constructor
-
--- example : BST ex_tree := by
---   repeat' (repeat constructor)
 
 /-
 exercise (1-star)
@@ -122,6 +133,9 @@ theorem bst_insert_of_bst {α : Type u} (k : Nat) (v : α) (t : Tree α)
 
 /-
 ## Correctness of BST operations
+
+To make sure that our implementation of a data structure operation is correct, we need to prove _algebraic properties_ of the data structure.
+These are equalities that should always hold when performing an operation.
 -/
 
 theorem lookup_empty {α : Type u} (d : α) (k : Nat)
@@ -150,6 +164,11 @@ theorem lookup_insert_eq {α : Type u} (d : α) (k : Nat) (v : α) (t : Tree α)
           unfold lookup
           simp [*]
 
+/-
+Arithmetic reasoning often comes up during a proof.
+To avoid going through tedious, low-level reasoning, we can use the `omega` tactic to let Lean take care of such reasoning as much as possible.
+-/
+
 example {α : Type u} (d : α) (k : Nat) (v : α) (t : Tree α)
     : lookup d k (insert k v t) = v := by
   induction t with
@@ -168,6 +187,10 @@ example {α : Type u} (d : α) (k : Nat) (v : α) (t : Tree α)
           simp [*]
           unfold lookup
           simp [*]
+
+/-
+Repetitive tactic applications can be encoded with a macro.
+-/
 
 /-- `by_cases' h : e` is a shorthand form `by_cases h : e <;> simp[*]` -/
 local macro "by_cases' " e:term : tactic =>
@@ -189,6 +212,10 @@ example {α : Type u} (d : α) (k : Nat) (v : α) (t : Tree α)
           simp [*]
           unfold lookup
           simp [*]
+
+/-
+We can add our own definitions as part of simplifications.
+-/
 
 attribute [local simp]
   contains lookup insert
