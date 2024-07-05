@@ -56,7 +56,8 @@ First, we define an inductive predicate stating that a given predicate holds for
 inductive ForallTree {α : Type u} (p : Nat → α → Prop) : Tree α → Prop where
   | empty : ForallTree p empty
   | tree : ∀ l k v r,
-      p k v → ForallTree p l → ForallTree p r → ForallTree p (tree l k v r)
+      p k v → ForallTree p l → ForallTree p r
+      → ForallTree p (tree l k v r)
 
 /-
 Now, we define the _binary search tree_ property.
@@ -103,7 +104,7 @@ Tactic `t1 <;> t2` applies tactic `t1` to the current goal, and for each subgoal
 -/
 
 example : BST ex_tree := by
-  constructor <;> constructor <;> constructor <;> constructor
+  constructor <;> constructor <;> constructor <;> simp
 
 /-
 exercise (1-star)
@@ -152,15 +153,15 @@ theorem lookup_insert_eq {α : Type u} (d : α) (k : Nat) (v : α) (t : Tree α)
       . simp [*]
         unfold lookup
         simp [*]
-      . by_cases hgt : k' < k
-        simp [*]
-        unfold lookup
-        simp [*]
+      . simp [*]
+        by_cases hgt : k > k'
+        . simp [*]
+          unfold lookup
+          simp [*]
         . have heq : k = k' := by
             simp at *; apply Nat.le_antisymm
             . assumption
             . assumption
-          simp [*]
           unfold lookup
           simp [*]
 
