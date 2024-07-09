@@ -1,3 +1,11 @@
+/-
+## Red-black trees
+
+Red-black trees are balanced binary search trees.
+Each node is either red or black.
+The empty node is assumed to be black.
+-/
+
 inductive Color where
   | red
   | black
@@ -13,6 +21,10 @@ def ex_tree : Tree String :=
   tree black (tree red empty 2 "two" empty) 4 "four" (tree red empty 5 "five" empty)
 
 def empty_tree {α : Type u} : Tree α := empty
+
+/-
+`contains` and `lookup` operations work like before.
+-/
 
 def contains {α : Type u} (x : Nat) (t : Tree α) : Bool :=
   match t with
@@ -30,6 +42,22 @@ def lookup {α : Type u} (d : α) (x : Nat) (t : Tree α) : α :=
       else if x > k then lookup d x r
       else v
 
+/-
+## Red-black tree properties
+
+To maintain balance, red-black trees maintain two invariants:
+1. No red node has a red parent, i.e., no two consecutive red nodes in a tree.
+2. Every path from the root node to leaf contains the same number of black nodes.
+
+These invariants ensure that the height of a red-black tree is logarithmic in the number of nodes, as the longest possible path from root (alternating colors) is no more than twice as long as the shortet path (black nodes only).
+
+## Insertion
+
+During an `insert` operation, these invariants may be invalidated.
+Therefore, we need to keep the newly modified subtree balanced.
+This is done by the `balance` function.
+-/
+
 def balance {α : Type u} (c : Color) (l : Tree α) (k : Nat) (vk : α) (r : Tree α) : Tree α :=
   match c with
   | red => tree red l k vk r
@@ -42,6 +70,17 @@ def balance {α : Type u} (c : Color) (l : Tree α) (k : Nat) (vk : α) (r : Tre
         => tree red (tree black a x vx b) y vy (tree black c z vz d)
     | _ => tree black l k vk r
 
+/-
+The main work is done in the `ins` function, which is like insertion on unbalanced binary search trees, but with two differences:
+1. The new node is colored red.
+2. We apply `balance` before returning the result.
+
+By coloring the new node red, we maintain Invariant 2, but we might be violating Invariant 1.
+The `balance` function above inspects whether there are a red child and a red grandchild on the same path from the black root node.
+Four cases are possible.
+In such cases, the tree is rebuilt accordingly, to maintain binary search tree property and reestablish red-black tree invariants.
+-/
+
 def ins {α : Type u} (x : Nat) (vx : α) (t : Tree α) : Tree α :=
   match t with
   | empty => tree red empty x vx empty
@@ -49,6 +88,12 @@ def ins {α : Type u} (x : Nat) (vx : α) (t : Tree α) : Tree α :=
       if x < k then balance c (ins x vx l) k vk r
       else if x > k then balance c l k vk (ins x vx r)
       else tree c l x vx r  -- update value
+
+/-
+Finally, when we are back at the root, it is possible that the root node itself is red, which might still violate Invariant 1.
+To fix this, we simply recolor the root node to black.
+Thus, the entire insertion operation entails calling `ins` function above, and then make the resulting root black.
+-/
 
 def make_black {α : Type u} (t : Tree α) : Tree α :=
   match t with
@@ -58,11 +103,13 @@ def make_black {α : Type u} (t : Tree α) : Tree α :=
 def insert {α : Type u} (x : Nat) (vx : α) (t : Tree α) : Tree α :=
   make_black (ins x vx t)
 
-/-
--/
-
 attribute [local simp]
   contains lookup balance ins make_black insert
+
+/-
+Now we are ready to prove properties on red-black trees.
+First, we prove that the result of insertion is not the empty tree.
+-/
 
 theorem ins_not_empty {α : Type u} (k : Nat) (vk : α) (t : Tree α)
     : ins k vk t ≠ empty := by
@@ -87,6 +134,12 @@ theorem ins_not_empty {α : Type u} (k : Nat) (vk : α) (t : Tree α)
           . simp
           . simp
       . simp
+
+/-
+We can see that the prove above is quite mundane: `split` until we can't, and then simplify.
+We can shorten the proof by using the `repeat'` _tactic combinator_.
+`repeat' t` applies tactic `t` repeatedly and recursively to each subgoal generated until it can't.
+-/
 
 example {α : Type u} (k : Nat) (vk : α) (t : Tree α)
     : ins k vk t ≠ empty := by
@@ -117,17 +170,55 @@ inductive BST {α : Type u} : Tree α → Prop where
       → BST r
       → BST (tree c l k v r)
 
+/-
+We show that the example tree satisfies the BST property.
+-/
+
 example : BST ex_tree := by
   constructor <;> constructor <;> constructor <;> constructor
 
 example : BST ex_tree := by
   repeat' constructor
 
+/-
+The empty tree satisfies the BST property trivially.
+-/
+
 theorem empty_tree_BST {α : Type u} : BST (@empty α) := by
   constructor
 
 /-
+Now, we would like to prove that the `balance` operation establishes the BST property.
+We might start as follows.
 -/
+
+example {α : Type u} c (l : Tree α) k vk (r : Tree α)
+    : ForallTree (fun x _ => x < k) l
+      -> ForallTree (fun x _ => x > k) r
+      -> BST l
+      -> BST r
+      -> BST (balance c l k vk r) := by
+  intro hlk hkr hbl hbr; simp
+  split
+  . constructor <;> assumption
+  . split
+    . -- we are in the case where `x` is left child of `y`
+      /-
+      In the hypothesis, we see that `l` must be a tree such that its left-left nodes are both red.
+      We perform case analysis on `l`, which takes care of the impossible case when `l` is empty.
+      -/
+      cases l <;> repeat simp [*] at *
+      /-
+      Here, we see that we need to further perform cases analysis on the left subtree of `l`.
+      In other words, we need to destruct `l` recursively.
+      The tactics we know so far don't quite accommodate this just yet.
+
+      The `all_goals` tactic combinator applies the given tactic to all the remaining goals in context.
+      Here, we simply abort the remaining proof.
+      -/
+      all_goals sorry
+    all_goals sorry
+  all_goals sorry
 
 theorem forallTree_imp {α : Type u} (P Q : Nat → α → Prop) t
     : ForallTree P t → (∀ k v, P k v → Q k v) → ForallTree Q t := by
@@ -152,6 +243,11 @@ theorem forallTree_gt {α : Type u} (t : Tree α) k k'
   apply forallTree_imp <;> try assumption
   omega
 
+/-
+To recursively destruct an inductively defined object, we can use the `rcases` tactic.
+We can give names to parameters in each case, so that we can refer to them later.
+-/
+
 theorem balance_BST {α : Type u} c (l : Tree α) k vk (r : Tree α)
     : ForallTree (fun x _ => x < k) l
       -> ForallTree (fun x _ => x > k) r
@@ -169,7 +265,18 @@ theorem balance_BST {α : Type u} c (l : Tree α) k vk (r : Tree α)
       rcases hbx with ⟨⟩ | ⟨_, _, _, _, _, hax, hxb, hba, hbb⟩
       rcases hxy with ⟨⟩ | ⟨_, _, _, _, _, hxy, hay, hby⟩
       rcases hxz with ⟨⟩ | ⟨_, _, _, _, _, haz, hxz, hbz⟩
-      repeat' constructor <;> try assumption
+      /-
+      Here, we have destructed all the assumptions to the atomic level.
+      The goal remains to show that the resulting tree is a BST.
+      We apply the constructor tactic repeatedly.
+      Most of the resulting subgoals are trivial by assumption.
+      -/
+      (repeat' constructor) <;> try assumption
+      /-
+      The only interesting subgoal is to show that each node in the right subtree of the original root is greater than the left child of the original root.
+      This should follow from assumptions, although not trivially.
+      To facilitate reasoning at this point, we prove lemmas `forallTree_imp`, `forallTree_lt`, and `forallTree_gt` above.
+      -/
       apply forallTree_gt <;> assumption
     . -- we are in the case where `y` is right child of `x`
       cases l <;> repeat simp [*] at *
@@ -202,7 +309,7 @@ theorem balance_BST {α : Type u} c (l : Tree α) k vk (r : Tree α)
       rcases hbz with ⟨⟩ | ⟨_, _, _, _, _, hcz, hzd, hbc, hbd⟩
       rcases hxz with ⟨⟩ | ⟨_, _, _, _, _, hxz, hxc, hxd⟩
       rcases hyz with ⟨⟩ | ⟨_, _, _, _, _, hyz, hyc, hyd⟩
-      repeat' constructor <;> try assumption
+      (repeat' constructor) <;> try assumption
       apply forallTree_lt <;> assumption
     . constructor <;> assumption
 
@@ -233,24 +340,6 @@ Proceed by induction on `t`.
 -/
 theorem ins_BST {α : Type u} (t : Tree α) k vk : BST t → BST (ins k vk t) := by
   sorry
-
-/-
-exercise (2-star)
-Prove that `insert` preserves `BST.
-You do not need induction.
--/
-theorem insert_BST {α : Type u} (t : Tree α) k vk
-    : BST t → BST (insert k vk t) := by
-  intro ht
-  unfold insert
-  unfold make_black
-  split
-  . constructor
-  . have h : BST (ins k vk t) := by apply ins_BST; assumption
-    simp [*] at h
-    cases h
-    constructor <;> assumption
-  -- sorry
 
 /-
 ## Verification
@@ -299,6 +388,7 @@ theorem lookup_ins_neq {α : Type u} (d : α) t k vk
 
 /-
 ## references
+* [Chris Okasaki. Red-black trees in a functional setting. Journal of Functional Programming. 1999;9(4):471-477.](https://doi.org/10.1017/S0956796899003494)
 * [Software Foundations, Volume 3 Verified Functional Algorithms: Red-Black Trees](https://softwarefoundations.cis.upenn.edu/vfa-current/Redblack.html)
 * [Theorem Proving in Lean 4: Tactics](https://leanprover.github.io/theorem_proving_in_lean4/tactics.html)
 -/
