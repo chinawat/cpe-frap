@@ -79,6 +79,7 @@ example : optimize_0plus
       (a_plus (a_num 2)
               (a_plus (a_num 0)
                       (a_plus (a_num 0) (a_num 1))))
+      -- 2 + (0 + (0 + 1))
     = a_plus (a_num 2) (a_num 1) := by
   rfl
 
@@ -93,9 +94,7 @@ theorem optimize_0plus_sound (a : AExp)
         cases n with simp [aeval]
         | zero => exact iha₂
         | succ _ => rw [iha₂]
-      | a_plus => rw [iha₁, iha₂]
-      | a_minus => rw [iha₁, iha₂]
-      | a_mult => rw [iha₁, iha₂]
+      | _ => rw [iha₁, iha₂]
   | a_minus a₁ a₂ iha₁ iha₂ =>
       simp [optimize_0plus, aeval]
       rw [iha₁, iha₂]
@@ -141,7 +140,7 @@ inductive AEvalR : AExp → Nat → Prop :=
 
 /-
 We can introduce a notation that makes expressions look more natural in Lean code.
-We'll write `e ==> n` to mean that arithmetic expression `e` evaluates to value `n`.
+We'll write `e ==> n` to mean that arithmetic expression `e` evaluates to value `n`, i.e, `AEvalR e n`.
 -/
 infix:90 " ==> " => AEvalR
 
