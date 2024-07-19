@@ -178,24 +178,27 @@ theorem ceval_deterministic c st st₁ st₂ :
   intro he₁ he₂
   induction he₁ generalizing st₂ with
   | e_skip => cases he₂; rfl
-  | e_asgn a n x st' h1 => cases he₂; simp [*] at *; rw [h1]
-  | e_seq c₁ c₂ st' st'' st''' _ _ ih₁ ih₂ =>
+  | e_asgn => cases he₂; simp [*] at *; congr
+  | e_seq c₁ c₂ st' st'' _ _ _ ih₁ ih₂ =>
+      apply ih₂
       cases he₂ with
-      | e_seq _ _ _ st_'' =>
-          apply ih₂
-          have h : st'' = st_'' := by apply ih₁; assumption
+      | e_seq _ _ _ st₂' =>
+          have h : st'' = st₂' := by
+            apply ih₁; assumption
           simp [*]
-  | e_ifTrue b c₁ c₂ st' st'' hb _ ih₁ =>
+  | e_ifTrue _ _ _ _ _ _ _ ih =>
       cases he₂ with
-      | e_ifTrue => apply ih₁; assumption  -- b evaluates to true
-      | e_ifFalse => -- be evaluates to false (contradiction)
+      | e_ifTrue => -- b evaluates to true in 2nd execution
+        apply ih; assumption
+      | e_ifFalse => -- b evaluates to false in 2nd execution (contradiction)
           simp [*] at *
-  | e_ifFalse b c₁ c₂ st' st'' hb _ ih₂ =>
+  | e_ifFalse _ _ _ _ _ _ _ ih =>
       cases he₂ with
-      | e_ifTrue => -- be evaluates to false (contradiction)
+      | e_ifTrue => -- b evaluates to true in 2nd execution (contradiction)
           simp [*] at *
-      | e_ifFalse => apply ih₂; assumption  -- b evaluates to true
-  | e_whileFalse b c' st' hb =>
+      | e_ifFalse => -- b evaluates to false in 2nd execution
+        apply ih; assumption
+  | e_whileFalse =>
       cases he₂ with
       | e_whileFalse => rfl
       | e_whileTrue => simp [*] at *
@@ -300,9 +303,13 @@ theorem swap_if_branches b c₁ c₂
 For `while` loops, we start with the easier theorem of the two.
 -/
 
+/-
+exercise (2-star)
+Prove that `while` loop with guard equivalent to false is equivalent to `skip`.
+-/
+
 theorem while_false b c : bequiv b <{False}> →
     cequiv <{while <[b]> do <[c]> end}> <{skip}> := by
-  /- TODO -/
   sorry
 
 /- TODO: not yet -/
