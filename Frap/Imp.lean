@@ -499,10 +499,10 @@ inductive Com :=
 open Com
 
 syntax "skip" : imp
-syntax:20 imp:20 ":=" imp:21 : imp
-syntax:20 imp:20 ";" imp:20 : imp
-syntax:20 "if" imp:20 "then" imp:20 "else" imp:20 : imp
-syntax:20 "while" imp:20 "do" imp:20 "end" : imp
+syntax:21 imp:20 ":=" imp:21 : imp
+syntax:20 imp:20 ";" imp:21 : imp
+syntax:21 "if" imp:20 "then" imp:20 "else" imp:20 : imp
+syntax:21 "while" imp:20 "do" imp:20 "end" : imp
 
 macro_rules
   | `(imp|skip) => `(c_skip)
