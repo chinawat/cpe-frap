@@ -2,6 +2,9 @@ import Frap.Equiv
 
 namespace Imp
 open Com
+-- -- enable this if necessary
+-- attribute [local simp]
+--   aeval beval insert' lookup' map_lookup_insert_eq map_lookup_insert_neq
 
 /-
 exercise (2-star)
@@ -9,6 +12,15 @@ Prove that adding a `skip` after a command results in an equivalent program.
 -/
 
 theorem skip_right c : cequiv <{ <[c]>; skip }> c := by
+  sorry
+
+/-
+exercise (2-star)
+Prove that if `b` is equivalent to `False`, then `if b then c₁ else c₂` is equivalent to `c₂`.
+-/
+
+theorem if_false b c₁ c₂
+    : bequiv b <{False}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₂ := by
   sorry
 
 /-

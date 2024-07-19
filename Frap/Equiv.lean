@@ -242,10 +242,70 @@ For examples of command equivalence, let's start by looking at a trivial program
 theorem skip_left c : cequiv <{ skip; <[c]> }> c := by
   intro st st'
   constructor
-  . sorry
-  . sorry
+  . intro h
+    cases h with
+    | e_seq _ _ st₁' st₁'' st₁''' hc₁ hc₂ =>
+        cases hc₁; assumption
+  . intro h
+    constructor
+    . constructor
+    . assumption
 
-/- TODO -/
+/-
+Similarly, here is a simple equivalence that optimizes `if` commands.
+-/
+
+theorem if_true_simple c₁ c₂
+    : cequiv <{if True then <[c₁]> else <[c₂]>}> c₁ := by
+  intro st st'
+  constructor
+  . intro h
+    cases h <;> simp [*] at *
+  . intro h
+    constructor
+    . simp  -- true
+    . assumption
+
+/-
+Of course, no (human) programmer would write a conditional whose condition is literally `True`.
+But they might write one whose condition is _equivalent_ to `True`:
+  Theorem: If `b` is equivalent to `True`, then `if b then c₁ else c₂` is equivalent to `c₁`.
+-/
+
+theorem if_true b c₁ c₂
+    : bequiv b <{True}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₁ := by
+  intro hb st st'
+  constructor
+  . intro h
+    cases h with
+    | e_ifTrue => assumption
+    | e_ifFalse => unfold bequiv at hb; simp [*] at *
+  . intro h
+    constructor <;> unfold bequiv at hb
+    . simp [*]
+    . assumption
+
+/-
+exercise (3-star)
+We can swap the branches of an `if` if we also negate its condition.
+-/
+
+theorem swap_if_branches b c₁ c₂
+    : cequiv
+        <{if <[b]> then <[c₁]> else <[c₂]>}>
+        <{if !<[b]> then <[c₂]> else <[c₁]>}> := by
+  sorry
+
+/-
+For `while` loops, we start with the easier theorem of the two.
+-/
+
+theorem while_false b c : bequiv b <{False}> →
+    cequiv <{while <[b]> do <[c]> end}> <{skip}> := by
+  /- TODO -/
+  sorry
+
+/- TODO: not yet -/
 theorem loop_never_stops st st' : ¬(st =[ <[loop]> ]=> st') := by
   unfold loop
   intro contra
