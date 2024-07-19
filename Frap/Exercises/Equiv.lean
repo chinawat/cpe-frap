@@ -2,6 +2,7 @@ import Frap.Equiv
 
 namespace Imp
 open Com
+open CEval
 -- -- enable this if necessary
 -- attribute [local simp]
 --   aeval beval insert' lookup' map_lookup_insert_eq map_lookup_insert_neq
