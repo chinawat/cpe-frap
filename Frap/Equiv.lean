@@ -259,7 +259,7 @@ Similarly, here is a simple equivalence that optimizes `if` commands.
 -/
 
 theorem if_true_simple c₁ c₂
-    : cequiv <{if True then <[c₁]> else <[c₂]>}> c₁ := by
+    : cequiv <{if true then <[c₁]> else <[c₂]>}> c₁ := by
   intro st st'
   constructor
   . intro h
@@ -276,7 +276,7 @@ But they might write one whose condition is _equivalent_ to `True`:
 -/
 
 theorem if_true b c₁ c₂
-    : bequiv b <{True}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₁ := by
+    : bequiv b <{true}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₁ := by
   intro hb st st'
   constructor
   . intro h
@@ -284,7 +284,7 @@ theorem if_true b c₁ c₂
     | e_ifTrue => assumption
     | e_ifFalse => unfold bequiv at hb; simp [*] at *
   . intro h
-    constructor <;> unfold bequiv at hb
+    apply e_ifTrue <;> unfold bequiv at hb
     . simp [*]
     . assumption
 
@@ -308,14 +308,8 @@ exercise (2-star)
 Prove that `while` loop with guard equivalent to false is equivalent to `skip`.
 -/
 
-theorem while_false b c : bequiv b <{False}> →
+theorem while_false b c : bequiv b <{false}> →
     cequiv <{while <[b]> do <[c]> end}> <{skip}> := by
-  sorry
-
-/- TODO: not yet -/
-theorem loop_never_stops st st' : ¬(st =[ <[loop]> ]=> st') := by
-  unfold loop
-  intro contra
   sorry
 
 /-

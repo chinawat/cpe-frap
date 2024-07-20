@@ -299,22 +299,27 @@ syntax:50 imp:50 "<=" imp:50 : imp
 syntax:40 "!" imp:40 : imp
 syntax:30 imp:30 "&&" imp:31 : imp
 syntax:30 imp:30 "||" imp:31 : imp
-syntax "True" : imp
-syntax "False" : imp
+syntax "true" : imp
+syntax "false" : imp
 syntax "(" imp ")" : imp
 syntax "<{" imp "}>" : term
 syntax ident : imp
 syntax "<[" term "]>" : imp
 
+syntax "true" : term
+syntax "false" : term
+
 macro_rules
+  | `(term|true) => `(Bool.true)
+  | `(term|false) => `(Bool.false)
   | `(term|<{$x}>) => `(imp|$x)
   | `(imp|$n:num) => `(a_num $n)
   | `(imp|$s:str) => `(a_id $s)
   | `(imp|$x + $y) => `(a_plus <{$x}> <{$y}>)
   | `(imp|$x - $y) => `(a_minus <{$x}> <{$y}>)
   | `(imp|$x * $y) => `(a_mult <{$x}> <{$y}>)
-  | `(imp|True) => `(b_true)
-  | `(imp|False) => `(b_false)
+  | `(imp|true) => `(b_true)
+  | `(imp|false) => `(b_false)
   | `(imp|$x = $y) => `(b_eq <{$x}> <{$y}>)
   | `(imp|$x != $y) => `(b_neq <{$x}> <{$y}>)
   | `(imp|$x <= $y) => `(b_le <{$x}> <{$y}>)
@@ -423,7 +428,7 @@ example : aeval (insert' (insert' empty y 4) x 5)
   simp [x, y, aeval, lookup', insert', map_lookup_insert_eq]
 
 example : beval (insert' empty x 5)
-    <{ True && !(x <= 4) }>
+    <{ true && !(x <= 4) }>
     = true := by
   simp [x, beval, insert', aeval, lookup']
 
@@ -474,7 +479,7 @@ theorem aequiv_example
   simp [aeval]
 
 theorem bequiv_example
-    : bequiv <{x - x = 0}> <{True}> := by
+    : bequiv <{x - x = 0}> <{true}> := by
   intro st
   simp [beval, aeval]
 
@@ -543,7 +548,7 @@ def subtract_3_from_5_slowly : Com :=
      <[subtract_slowly]> }>
 
 def loop : Com :=
-  <{ while True do
+  <{ while true do
        skip
      end }>
 

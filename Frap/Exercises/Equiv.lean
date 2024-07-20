@@ -21,7 +21,7 @@ Prove that if `b` is equivalent to `False`, then `if b then c₁ else c₂` is e
 -/
 
 theorem if_false b c₁ c₂
-    : bequiv b <{False}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₂ := by
+    : bequiv b <{false}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₂ := by
   sorry
 
 /-
