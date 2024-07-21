@@ -490,7 +490,7 @@ We now introduce commands in our imperative language:
 * `skip`: do nothing
 * `x := a`: assignment to a variable
 * `c₁; c₂`: do `c₁`, then `c₂` (sequencing operation)
-* `if b then c₁ else c₂`: conditional statement
+* `if b then c₁ else c₂ end`: conditional statement
 * `while b do c end`: loop
 -/
 
@@ -506,7 +506,7 @@ open Com
 syntax "skip" : imp
 syntax:21 imp:20 ":=" imp:21 : imp
 syntax:20 imp:20 ";" imp:21 : imp
-syntax:21 "if" imp:20 "then" imp:20 "else" imp:20 : imp
+syntax:21 "if" imp:20 "then" imp:20 "else" imp:20 "end" : imp
 syntax:21 "while" imp:20 "do" imp:20 "end" : imp
 
 macro_rules
@@ -514,7 +514,7 @@ macro_rules
   | `(imp|$x:str := $y) => `(c_asgn $x <{$y}>)
   | `(imp|$x:ident := $y) => `(c_asgn $x <{$y}>)
   | `(imp|$c1 ; $c2) => `(c_seq <{$c1}> <{$c2}>)
-  | `(imp|if $b then $c1 else $c2) => `(c_if <{$b}> <{$c1}> <{$c2}>)
+  | `(imp|if $b then $c1 else $c2 end) => `(c_if <{$b}> <{$c1}> <{$c2}>)
   | `(imp|while $b do $c end) => `(c_while <{$b}> <{$c}>)
 
 /-

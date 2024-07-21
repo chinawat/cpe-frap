@@ -119,7 +119,7 @@ The cost of defining evaluation as a relation instead of a function is that we n
 
 example : empty =[
       x := 2;
-      if (x <= 1) then y := 3 else z := 4
+      if (x <= 1) then y := 3 else z := 4 end
     ]=> insert' (insert' empty x 2) z 4 := by
   constructor  -- c_seq
   . constructor  -- c_asgn
@@ -141,7 +141,7 @@ macro_rules
 
 example : empty =[
       x := 2;
-      if (x <= 1) then y := 3 else z := 4
+      if (x <= 1) then y := 3 else z := 4 end
     ]=> (z !-> 4; x !-> 2; empty) := by
   constructor  -- c_seq
   . constructor  -- c_asgn
@@ -259,7 +259,7 @@ Similarly, here is a simple equivalence that optimizes `if` commands.
 -/
 
 theorem if_true_simple c₁ c₂
-    : cequiv <{if true then <[c₁]> else <[c₂]>}> c₁ := by
+    : cequiv <{if true then <[c₁]> else <[c₂]> end}> c₁ := by
   intro st st'
   constructor
   . intro h
@@ -276,7 +276,7 @@ But they might write one whose condition is _equivalent_ to `True`:
 -/
 
 theorem if_true b c₁ c₂
-    : bequiv b <{true}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]>}> c₁ := by
+    : bequiv b <{true}> → cequiv <{if <[b]> then <[c₁]> else <[c₂]> end}> c₁ := by
   intro hb st st'
   constructor
   . intro h
@@ -295,8 +295,8 @@ We can swap the branches of an `if` if we also negate its condition.
 
 theorem swap_if_branches b c₁ c₂
     : cequiv
-        <{if <[b]> then <[c₁]> else <[c₂]>}>
-        <{if !<[b]> then <[c₂]> else <[c₁]>}> := by
+        <{if <[b]> then <[c₁]> else <[c₂]> end}>
+        <{if !<[b]> then <[c₂]> else <[c₁]> end}> := by
   sorry
 
 /-
