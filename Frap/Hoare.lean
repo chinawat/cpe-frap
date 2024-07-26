@@ -39,6 +39,17 @@ namespace Hoare
 --   aeval beval aequiv bequiv cequiv
 
 /-
+# Hoare logic
+
+Our goal in this chapter is to carry out some simple examples of program verification -- i.e., to use the precise definition of Imp to prove formally that particular programs satisfy particular specifications of their behavior.
+
+We'll develop a reasoning system called _Floyd-Hoare Logic_ -- often shortened to just _Hoare Logic_ -- in which each of the syntactic constructs of Imp is equipped with a generic "proof rule" that can be used to reason compositionally about the correctness of programs involving this construct.
+
+Hoare Logic originated in the 1960s, and it continues to be the subject of intensive research right up to the present day.
+It lies at the core of a multitude of tools that are being used in academia and industry to specify and verify real software systems.
+
+Hoare Logic combines two beautiful ideas: a natural way of writing down _specifications_ of programs, and a _structured proof technique_ for proving that programs are correct with respect to such specifications -- where by "structured" we mean that the structure of proofs directly mirrors the structure of the programs that they are about.
+
 ## Assertions
 
 An _assertion_ is a logical claim about the state of a program's memory -- formally, a property of `State`s.
@@ -265,7 +276,28 @@ By using a _parameter_ `m` (a Lean number) to remember the original value of `x`
 theorem hoare_asgn_fwd m a (P : Assertion) :
     {* fun st => P st ∧ lookup' st x = m *}
       c_asgn x a
-    {* fun st => P (st[x ↦ m]) ∧ lookup' st x = aeval (st[ x↦ m]) a *} := by
+    {* fun st => P (st[x ↦ m]) ∧ lookup' st x = aeval (st[x ↦ m]) a *} := by
+  intro st st' hPre hEval
+  cases hEval
+  cases hPre
+  rename_i hP hxm
+  constructor
+  . -- need a lemma that `x = m → st = st[x ↦ m]`
+    -- and a lemma that `(st[x ↦ n])[x ↦ m] = st[x ↦ m]`
+    sorry
+  . simp [map_lookup_insert_eq]
+    sorry
+
+/-
+exercise (2-star)
+Another way to define a forward rule for assignments is to existentially quantify over the previous value of the assigned variable.
+Prove that it is correct.
+-/
+
+theorem hoare_asgn_fwd_exists a (P : Assertion) :
+    {* fun st => P st *}
+      c_asgn x a
+    {* fun st => ∃ m, P (st[x ↦ m]) ∧ lookup' st x = aeval (st[x ↦ m]) a *} := by
   sorry
 
 /-
@@ -446,7 +478,11 @@ theorem hoare_while P b c :
     simp [*] at *
     rename_i ih
     apply ih
-    sorry
+    apply hHoare
+    . constructor
+      . apply hPre
+      . assumption
+    . assumption
 
 /-
 ## references

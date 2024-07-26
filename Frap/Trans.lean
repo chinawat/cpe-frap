@@ -632,28 +632,6 @@ theorem fold_constants_com_sound : ctrans_sound fold_constants_com := by
       . assumption
 
 /-
-## Proving inequivalence
-
-We can prove that two programs are inequivalent by providing a counterexample initial state that, after executing each program from this initial state, results in two different states.
--/
-
-theorem inequiv_loop_skip : ¬ cequiv loop c_skip := by
-  intro contra
-  unfold cequiv at contra
-  apply loop_never_stops
-  rw [contra empty]
-  constructor
-
-example : ¬ cequiv loop c_skip := by
-  simp
-  exists empty
-  exists empty
-  intro contra
-  apply loop_never_stops
-  rw [contra]
-  constructor
-
-/-
 ## references
 * [Software Foundations, Volume 2 Programming Language Foundations: Program Equivalence](https://softwarefoundations.cis.upenn.edu/plf-current/Equiv.html)
 -/
