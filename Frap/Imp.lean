@@ -334,60 +334,31 @@ macro_rules
 ### States
 
 To evaluate expressions with variables, we need a place to look up the value of a variable.
-We will use an _association list_ for this purpose, with 0 as the default value.
-Of course, in real systems, we would use a more efficient data structure, which we can _prove_ that it works the same way, i.e., we can interchange data structures for states without affecting the correctness of the evaluation.
+We will use a function for this purpose, with 0 as the default value.
+Of course, in real systems, we might use a different data structure, which we can _prove_ that it works the same way, i.e., we can interchange data structures for states without affecting the correctness of the evaluation.
 -/
 
-abbrev State := List (String × Nat)
+abbrev State := String → Nat
 
-open List
+def empty : State := fun _ => 0
 
-def empty : State := nil
-
-def insert' (st : State) (k : String) (v : Nat) : State :=
-  match st with
-  | nil => [(k, v)]
-  | cons (k', v') st' =>
-    if k == k' then cons (k, v) st'
-    else cons (k', v') (insert' st' k v)
-
-def lookup' (st : State) (k : String) : Nat :=
-  match st with
-  | nil => 0
-  | cons (k', v') st' =>
-    if k == k' then v' else lookup' st' k
+def update (st : State) (k : String) (v : Nat) : State :=
+  fun x => if x == k then v else st x
 
 /-
 We can prove properties about our association lists as states.
 -/
 
-theorem map_lookup_insert_eq st (x : String) (v : Nat)
-    : lookup' (insert' st x v) x = v := by
-  induction st with
-  | nil => simp [lookup']
-  | cons p st' ih =>
-    obtain ⟨k', v'⟩ := p
-    unfold insert'
-    split
-    . simp [lookup']
-    . simp [lookup', *]
+theorem lookup_update_eq st (x : String) (v : Nat)
+    : (update st x v) x = v := by
+  simp [update]
 
-theorem map_lookup_insert_neq st (x x' : String) (v : Nat)
+theorem lookup_update_neq st (x x' : String) (v : Nat)
     : x' ≠ x
-      → lookup' (insert' st x v) x' = lookup' st x' := by
-  intro hneq
-  induction st with
-  | nil => simp [lookup', *]
-  | cons p st' ih =>
-    obtain ⟨k', v'⟩ := p
-    unfold insert'
-    split
-    . simp [lookup', *] at *
-      have h: x' ≠ k' := by
-        intro hneq'; apply hneq
-        rw [hneq']; apply Eq.symm; assumption
-      simp [h]
-    . simp [lookup', *]
+      → (update st x v) x' = st x' := by
+  simp [update]
+  intro hneq heq
+  simp [*] at *
 
 /-
 The evaluation functions now require a state as an argument.
@@ -396,7 +367,7 @@ The evaluation functions now require a state as an argument.
 def aeval (st : State) (a : AExp) : Nat :=
   match a with
   | a_num n => n
-  | a_id x => lookup' st x
+  | a_id x => st x
   | a_plus a₁ a₂ => (aeval st a₁) + (aeval st a₂)
   | a_minus a₁ a₂ => (aeval st a₁) - (aeval st a₂)
   | a_mult a₁ a₂ => (aeval st a₁) * (aeval st a₂)
@@ -416,21 +387,21 @@ def beval (st : State) (b : BExp) : Bool :=
 We can try evaluating some expressions under given states.
 -/
 
-example : aeval (insert' empty x 5)
+example : aeval (update empty x 5)
     <{3 + x * 2}>
     -- (a_plus (a_num 3) (a_mult (a_id x) (a_num 2)))
     = 13 := by
-  simp [aeval, map_lookup_insert_eq]
+  simp [aeval, lookup_update_eq]
 
-example : aeval (insert' (insert' empty y 4) x 5)
+example : aeval (update (update empty y 4) x 5)
     <{z + x * y}>
     = 20 := by
-  simp [x, y, aeval, lookup', insert', map_lookup_insert_eq]
+  simp [x, y, aeval, empty, update]
 
-example : beval (insert' empty x 5)
+example : beval (update empty x 5)
     <{ true && !(x <= 4) }>
     = true := by
-  simp [x, beval, insert', aeval, lookup']
+  simp [x, beval, aeval, update]
 
 /-
 We can define evaluation as a relation, like before.
@@ -440,7 +411,7 @@ But we need to talk about state in our relation.
 inductive AEvalR : State → AExp → Nat → Prop :=
   | e_a_num (st : State) (n : Nat) : AEvalR st (a_num n) n
   | e_a_id (st : State) (x : String) (n : Nat) :
-      lookup' st x = n → AEvalR st (a_id x) n
+      st x = n → AEvalR st (a_id x) n
   | e_a_plus (st : State) (a₁ a₂ : AExp) (n₁ n₂ : Nat) :
       AEvalR st a₁ n₁ → AEvalR st a₂ n₂ → AEvalR st (a_plus a₁ a₂) (n₁ + n₂)
   | e_a_minus (st : State) (a₁ a₂ : AExp) (n₁ n₂ : Nat) :

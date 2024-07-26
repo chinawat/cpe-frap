@@ -37,7 +37,7 @@ def ceval_fun_no_while (st : State) (c : Com) : State :=
   match c with
   | c_skip => st
   | c_asgn x a =>
-      insert' st x (aeval st a)
+      update st x (aeval st a)
   | c_seq c₁ c₂ =>
       let st' := ceval_fun_no_while st c₁
       ceval_fun_no_while st' c₂
@@ -86,7 +86,7 @@ inductive CEval : Com → State → State → Prop :=
       CEval c_skip st st
   | e_asgn : ∀ a n x st,
       aeval st a = n
-      → CEval (c_asgn x a) st (insert' st x n)
+      → CEval (c_asgn x a) st (update st x n)
   | e_seq : ∀ c₁ c₂ st st' st'',
       CEval c₁ st st' → CEval c₂ st' st''
       → CEval (c_seq c₁ c₂) st st''
@@ -111,7 +111,7 @@ macro_rules
   | `(term|$st =[ $c ]=> $st') => `(CEval <{$c}> $st $st')
 
 attribute [local simp]
-  aeval beval insert' lookup' map_lookup_insert_eq map_lookup_insert_neq
+  aeval beval empty update lookup_update_eq lookup_update_neq
 
 /-
 The cost of defining evaluation as a relation instead of a function is that we now need to construct a _proof_ that some program evaluates to some result state, rather than just letting Lean's computation mechanism do it for us.
@@ -120,7 +120,7 @@ The cost of defining evaluation as a relation instead of a function is that we n
 example : empty =[
       x := 2;
       if (x <= 1) then y := 3 else z := 4 end
-    ]=> insert' (insert' empty x 2) z 4 := by
+    ]=> update (update empty x 2) z 4 := by
   constructor  -- c_seq
   . constructor  -- c_asgn
     rfl  -- aeval
@@ -137,7 +137,7 @@ We'll write `x !-> v ; st` to mean that "update `x` with value `v` in state `st`
 
 syntax term "!->" term "; " term : term
 macro_rules
-  | `(term|$x:term !-> $a:term ; $st) => `(insert' $st $x $a)
+  | `(term|$x:term !-> $a:term ; $st) => `(update $st $x $a)
 
 example : empty =[
       x := 2;
@@ -178,7 +178,10 @@ theorem ceval_deterministic c st st₁ st₂ :
   intro he₁ he₂
   induction he₁ generalizing st₂ with
   | e_skip => cases he₂; rfl
-  | e_asgn => cases he₂; simp [*] at *; congr
+  | e_asgn =>
+      cases he₂ with
+      | e_asgn _ _ _ _ aev =>
+        simp [*] at *; rw [aev]
   | e_seq c₁ c₂ st' st'' _ _ _ ih₁ ih₂ =>
       apply ih₂
       cases he₂ with
@@ -215,9 +218,9 @@ theorem ceval_deterministic c st st₁ st₂ :
 -/
 
 theorem plus2_spec n st st' :
-    lookup' st x = n
+    st x = n
     → (st =[ <[plus2]> ]=> st')
-    → lookup' st' x = n + 2 := by
+    → st' x = n + 2 := by
   intro hx heval
   cases heval  -- e_asgn
   simp [*] at *; omega

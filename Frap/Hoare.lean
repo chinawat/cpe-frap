@@ -232,7 +232,7 @@ Here are some valid instances of the assignment rule:
 -/
 
 macro s:term "[" name:term "↦" val:term "]" : term =>
-  `(insert' $s $name $val)
+  `(update $s $name $val)
 
 theorem hoare_asgn Q x a :
     {* fun st => Q (st[x ↦ aeval st a]) *} c_asgn x a {* Q *} := by
@@ -243,11 +243,11 @@ theorem hoare_asgn Q x a :
 
 example :
     -- { (x < 5)[x ↦ x+1]}
-    {* fun st => (fun st' => lookup' st' x < 5) (st[x ↦ aeval st <{x + 1}>]) *}
+    {* fun st => (fun st' => st' x < 5) (st[x ↦ aeval st <{x + 1}>]) *}
       <{x := x + 1}>
     -- { x < 5 }
-    {* fun st => lookup' st x < 5 *} := by
-  apply hoare_asgn (fun st => lookup' st x < 5)
+    {* fun st => st x < 5 *} := by
+  apply hoare_asgn (fun st => st x < 5)
 
 /-
 Complete these Hoare triples by providing an appropriate precondition using ∃, then prove then with `apply hoare_asgn`.
@@ -262,7 +262,7 @@ example : ∃ P,
     {* P *}
       <{ x := 2 * x }>
     -- { x ≤ 10 }
-    {* fun st => lookup' st x <= 10 *} := by
+    {* fun st => st x <= 10 *} := by
   sorry
 
 /-
@@ -273,7 +273,7 @@ example : ∃ P,
     {* P *}
       <{ x := 3 }>
     -- { 0 ≤ x ∧ x ≤ 5 }
-    {* fun st => 0 <= lookup' st x ∧ lookup' st x <= 5 *} := by
+    {* fun st => 0 <= st x ∧ st x <= 5 *} := by
   sorry
 
 /-
@@ -281,9 +281,9 @@ By using a _parameter_ `m` (a Lean number) to remember the original value of `x`
 -/
 
 theorem hoare_asgn_fwd m a (P : Assertion) :
-    {* fun st => P st ∧ lookup' st x = m *}
+    {* fun st => P st ∧ st x = m *}
       c_asgn x a
-    {* fun st' => P (st'[x ↦ m]) ∧ lookup' st' x = aeval (st'[x ↦ m]) a *} := by
+    {* fun st' => P (st'[x ↦ m]) ∧ st' x = aeval (st'[x ↦ m]) a *} := by
   intro st st' hPre hEval
   cases hEval
   cases hPre
@@ -292,7 +292,7 @@ theorem hoare_asgn_fwd m a (P : Assertion) :
   . -- need a lemma that `x = m → st = st[x ↦ m]`
     -- and a lemma that `(st[x ↦ n])[x ↦ m] = st[x ↦ m]`
     sorry
-  . simp [map_lookup_insert_eq]
+  . simp [update, lookup_update_eq]
     sorry
 
 /-
@@ -304,7 +304,7 @@ Prove that it is correct.
 theorem hoare_asgn_fwd_exists a (P : Assertion) :
     {* P *}
       c_asgn x a
-    {* fun st' => ∃ m, P (st'[x ↦ m]) ∧ lookup' st' x = aeval (st'[x ↦ m]) a *} := by
+    {* fun st' => ∃ m, P (st'[x ↦ m]) ∧ st' x = aeval (st'[x ↦ m]) a *} := by
   sorry
 
 /-
@@ -355,11 +355,11 @@ example :
     {* fun _ => True *}
       <{ x := 1 }>
     -- { x = 1 }
-    {* fun st => lookup' st x = 1 *} := by
+    {* fun st => st x = 1 *} := by
   apply hoare_consequence_pre
   . apply hoare_asgn
   . intro st _
-    simp [map_lookup_insert_eq]
+    simp [lookup_update_eq]
 
 /-
 Finally, here is a combined rule of consequence that allows us to vary both the precondition and the postcondition.
@@ -428,7 +428,7 @@ example :
     {* fun _ => True *}
       <{if x = 0 then y := 2 else y := x + 1 end}>
     -- { x ≤ y }
-    {* fun st => lookup' st x <= lookup' st y *} := by
+    {* fun st => st x <= st y *} := by
   sorry
 
 /-
@@ -440,7 +440,7 @@ example :
     {* fun _ => True *}
       <{if x <= y then z := y - x else y := x + z end}>
     -- { y = x + z }
-    {* fun st => lookup' st y = lookup' st x + lookup' st z *} := by
+    {* fun st => st y = st x + st z *} := by
   sorry
 
 /-
