@@ -287,13 +287,14 @@ theorem hoare_asgn_fwd m a (P : Assertion) :
   intro st st' hPre hEval
   cases hEval
   cases hPre
-  rename_i hP hxm
+  -- need a lemma that `x = m → st = st[x ↦ m]`
+  -- and a lemma that `(st[x ↦ n])[x ↦ m] = st[x ↦ m]`
+  have hupd n : update (update st x n) x m = st := by
+    apply funext; intro v; simp [update]
+    split <;> simp [*]
   constructor
-  . -- need a lemma that `x = m → st = st[x ↦ m]`
-    -- and a lemma that `(st[x ↦ n])[x ↦ m] = st[x ↦ m]`
-    sorry
-  . simp [update, lookup_update_eq]
-    sorry
+  . simp [hupd, *]
+  . simp [hupd, update, *]
 
 /-
 exercise (2-star)
@@ -359,7 +360,7 @@ example :
   apply hoare_consequence_pre
   . apply hoare_asgn
   . intro st _
-    simp [lookup_update_eq]
+    simp [update]
 
 /-
 Finally, here is a combined rule of consequence that allows us to vary both the precondition and the postcondition.
@@ -410,13 +411,15 @@ theorem hoare_if P Q b c₁ c₂ :
     → {* P *} c_if b c₁ c₂ {* Q *} := by
   intro hTrue hFalse st st' hPre hEval
   cases hEval
-  . rename_i hb hc₁
+  . -- e_ifTrue
+    rename_i hb hc₁
     apply hTrue
     . constructor
       . exact hPre
       . exact hb
     . exact hc₁
-  . rename_i hb hc₂
+  . -- e_ifFalse
+    rename_i hb hc₂
     apply hFalse
     . constructor
       . exact hPre
@@ -429,7 +432,20 @@ example :
       <{if x = 0 then y := 2 else y := x + 1 end}>
     -- { x ≤ y }
     {* fun st => st x <= st y *} := by
-  sorry
+  apply hoare_if
+  . apply hoare_consequence_pre
+    . apply hoare_asgn
+    . intro st _
+      simp [update] at *
+      split <;> simp [*]
+  . apply hoare_consequence_pre
+    . apply hoare_asgn
+    . intro st _
+      simp [update]
+      split
+      . simp [*]
+      . generalize st x = vx
+        omega
 
 /-
 exercise (2-star)
@@ -490,6 +506,71 @@ theorem hoare_while P b c :
       . apply hPre
       . assumption
     . assumption
+
+/-
+We call `P` a _loop invariant_ of `while b do c` if
+  `{P ∧ b} c {P}`
+is a valid Hoare triple.
+
+This means that `P` will be true at the end of the loop body whenever the loop body executes.
+If `P` contradicts `b`, this holds trivially since the precondition is false.
+
+For instance, `X = 0` is a loop invariant of
+  `while X = 2 do X := 1 end`
+since the program will never enter the loop.
+
+The program
+  `while Y > 10 do Y := Y - 1; Z := Z + 1 end`
+admits an interesting loop invariant:
+  `X = Y + Z`
+Note that this doesn't contradict the loop guard but neither is it a command invariant of
+  `Y := Y - 1; Z := Z + 1`
+since, if `X = 5`, `Y = 0` and `Z = 5`, running the command will set `Y + Z` to 6, because `Y` remains 0.
+The loop guard `Y > 10` guarantees that this will not be the case.
+We will see many such loop invariants in the following lecture.
+-/
+
+example :
+    -- { x ≤ 3 }
+    {* fun st => st x ≤ 3 *}
+    <{
+      while x <= 2 do
+        x := x + 1
+      end
+    }>
+    -- { x = 3 }
+    {* fun st => st x = 3 *} := by
+  apply hoare_consequence_post
+  . apply hoare_while
+    apply hoare_consequence_pre
+    . apply hoare_asgn
+    . simp [update]
+      intro st _
+      omega
+  . simp [update]
+    intro st _
+    generalize st x = vx at *
+    omega
+
+/-
+If the loop never terminates, any postcondition will work.
+-/
+
+theorem always_loop_hoare Q :
+    {* fun _ => True *} <{ while true do skip end }> {* Q *} := by
+  apply hoare_consequence_post
+  . apply hoare_while
+    apply hoare_consequence_post
+    . apply hoare_skip
+    . intro st _; simp
+  . intro st _; simp [*] at *
+
+/-
+Of course, this result is not surprising if we remember that the definition of `valid_hoare_triple` asserts that the postcondition must hold _only_ when the command terminates.
+If the command doesn't terminate, we can prove anything we like about the post-condition.
+
+Hoare rules that specify what happens _if_ commands terminate, without proving that they do, are said to describe a logic of _partial correctness_.
+-/
 
 /-
 ## references
