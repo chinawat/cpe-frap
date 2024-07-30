@@ -290,6 +290,7 @@ theorem hoare_asgn_fwd m a (P : Assertion) :
   -- need a lemma that `x = m → st = st[x ↦ m]`
   -- and a lemma that `(st[x ↦ n])[x ↦ m] = st[x ↦ m]`
   have hupd n : update (update st x n) x m = st := by
+    -- use "function extensionality" axiom
     apply funext; intro v; simp [update]
     split <;> simp [*]
   constructor
@@ -444,7 +445,7 @@ example :
       simp [update]
       split
       . simp [*]
-      . generalize st x = vx
+      . unfold x
         omega
 
 /-
@@ -537,7 +538,7 @@ example :
       omega
   . simp [update]
     intro st _
-    generalize st x = vx at *
+    unfold x at *
     omega
 
 /-

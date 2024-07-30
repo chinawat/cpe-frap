@@ -195,7 +195,7 @@ You don't need to understand the details.
 What's left after `verify_assertion` does its thing should be just the "interesting parts" of the proof, which, if we're lucky, might be nothing at all!
 -/
 
-macro "verify_assertion " : tactic =>
+macro "verify_assertion" : tactic =>
   `(tactic|
     (repeat' apply And.intro) <;>
     intro _ <;>
@@ -534,11 +534,16 @@ theorem dec_while_correct : outer_triple_valid dec_while := by
     . verify_assertion
   . verify_assertion
 
+
+example : outer_triple_valid dec_while := by
+  apply verification_correct
+  verify_assertion
+
 /-
 To automate the overall process of verification, we can use `verification_correct` to extract the verification conditions, use `verify_assertion` to verify them as much as it can, and finally tidy up any remaining bits by hand.
 -/
 
-macro "verify " : tactic =>
+macro "verify" : tactic =>
   `(tactic|
     intros <;>
     apply verification_correct <;>
@@ -549,7 +554,8 @@ macro "verify " : tactic =>
 Here's the final, formal proof that `dec_while` is correct.
 -/
 
-theorem dec_while_correct' : outer_triple_valid dec_while := by
+theorem dec_while_correct'
+    : outer_triple_valid dec_while := by
   verify
 
 /-
