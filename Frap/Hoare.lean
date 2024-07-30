@@ -448,18 +448,6 @@ example :
         omega
 
 /-
-exercise (2-star)
--/
-
-example :
-    -- { True }
-    {* fun _ => True *}
-      <{if x <= y then z := y - x else y := x + z end}>
-    -- { y = x + z }
-    {* fun st => st y = st x + st z *} := by
-  sorry
-
-/-
 ## While loops
 
 The Hoare rule for `while` loops is based on the idea of a _command invariant_ (or just _invariant_): an assertion whose truth is guaranteed after executing a command, assuming it is true before.
