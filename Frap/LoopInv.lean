@@ -372,6 +372,223 @@ theorem is_wp_example
     simp at *; assumption
 
 /-
+# Hoare logic as a logic
+
+The presentation of Hoare logic we've seen so far could be described as "model-theoretic": the proof rules for each of the constructors were presented as _theorems_ about the evaluation behavior of programs, and proofs of program correctness (validity of Hoare triples) were constructed by combining these theorems directly in Lean.
+
+Another way of presenting Hoare logic is to define a completely separate proof system—a set of axioms and inference rules that talk about commands, Hoare triples, etc.—and then say that a proof of a Hoare triple is a valid derivation in _that_ logic.
+We can do this by giving an inductive definition of _valid derivations_ in this new logic.
+
+## Hoare logic and model theory
+
+Recall the definition of valid Hoare triple:
+`∀ (st st' : State), P st → CEval c st st' → Q st'`
+-/
+
+#print valid_hoare_triple
+
+/-
+This notion of _validity_ is based on the underlying model of how Imp programs execute.
+That model itself is based on states.
+
+So far, we have punned between the syntax of a Hoare triple, written `{P} c {Q}`, and its validity, as expressed by `valid_hoare_triple`.
+In essence, we have said that the semantic meaning of that syntax is the proposition returned by `valid_hoare_triple`.
+This way of giving semantic meaning to something syntactic is part of the branch of mathematical logic known as _model theory_.
+
+Our approach to Hoare logic through model theory led us to state proof rules in terms of that same state-based model, and to prove program correctness in it, too.
+But there is another approach, which is arguably more common in Hoare logic.
+We turn to it, next.
+
+## Hoare logic and proof theory
+
+Instead of using states and evaluation as the basis for reasoning, let's take the proof rules as the basis.
+These proof rules give us a set of axioms and inference rules that constitute a logic in their own right.
+The Hoare triples in these proof rules has no other meaning than what the rules give them.
+Forget about states and evaluations.
+They are just syntax that the rules tell us how to manipulate in legal ways.
+
+Through this new lens, a valid Hoare triple, such as `{ x = 0 } x := x + 1 { x = 1 }`, is _derivable_ by writing a proof tree using the proof rules.
+On the other hand, an invalid Hoare triple, such as `{ x = 0 } skip { x = 1 }` is _not_ derivable, because there is no way to apply the rules to construct a proof tree with this triple at its root.
+
+This approach gives meaning to triples not in terms of a model, but in terms of how they can be used to construct proof trees.
+It's a different way of giving semantic meaning to something syntactic, and it's part of the branch of mathematical logic known as _proof theory_.
+
+Our goal for the rest of this lecture is to formalize Hoare logic using proof theory, and then to prove that the model-theoretic and proof-theoretic formalizations are consistent with one another.
+
+## Derivability
+
+To formalize derivability of Hoare triples, we introduce inductive type `Derivable`, which describes legal proof trees using the Hoare rules.
+-/
+
+inductive Derivable : Assertion → Com → Assertion → Prop :=
+  | h_skip P : Derivable P c_skip P
+  | h_asgn Q x a : Derivable (fun st => Q (st[x ↦ aeval st a])) (c_asgn x a) Q
+  | h_seq P c Q d R :
+      Derivable Q d R → Derivable P c Q → Derivable P (c_seq c d) R
+  | h_if P Q b c₁ c₂ :
+      Derivable (fun st => P st ∧ beval st b) c₁ Q
+      → Derivable (fun st => P st ∧ ¬(beval st b)) c₂ Q
+      → Derivable P (c_if b c₁ c₂) Q
+  | h_while P b c :
+      Derivable (fun st => P st ∧ beval st b) c P
+      → Derivable P (c_while b c) (fun st => P st ∧ ¬(beval st b))
+  | h_consequence P Q P' Q' c :
+      Derivable P' c Q'
+      → (P ->> P')
+      → (Q' ->> Q)
+      → Derivable P c Q
+
+open Derivable
+
+/-
+We don't need to include axioms corresponding to `hoare_consequence_pre` or `hoare_consequence_post`, because these can be proven easily from `h_consequence`.
+-/
+
+theorem h_consequence_pre P Q P' c
+    : (Derivable P' c Q) → (P ->> P') → (Derivable P c Q) := by
+  intro h hpre
+  apply h_consequence <;> try assumption
+  intro st hQ; assumption
+
+theorem h_consequence_post P Q Q' c
+    : Derivable P c Q' → (Q' ->> Q) → Derivable P c Q := by
+  intro h hpre
+  apply h_consequence <;> try assumption
+  intro st hP; assumption
+
+/-
+As an example, let's construct a proof tree for
+```
+  { (x = 3)[x ↦ x+2][x ↦ x+1] }
+    x := x + 1;
+    x := x + 2
+  { x = 3 }
+```
+-/
+
+-- example :
+--     Derivable
+--       (fun st => (fun st' => st' x = 3) (st[x ↦ aeval st <{x + 2}>][x ↦ aeval st <{x + 1}>]))
+--         <{ x := x + 1; x := x + 2 }>
+--       (fun st => st x = 3) := by
+--   apply h_seq
+--   . apply h_asgn
+--   . apply h_asgn (fun st => (fun st' => st' x = 3) (st[x ↦ aeval st <{x + 2}>]))
+
+/-
+## Soundness and completeness
+
+We now have two approaches to formulating Hoare logic:
+* The model-theoretic approach uses `valid_hoare_triple` to characterize when a Hoare triple holds in a model, which is based on states.
+* The proof-theoretic approach uses `Derivable` to characterize when a Hoare triple is derivable as the end of a proof tree.
+
+Do these two approaches agree?
+That is, are the valid Hoare triples exactly the derivable ones?
+This is a standard question investigated in mathematical logic.
+There are two pieces to answering it:
+* A logic is _sound_ if everything that is derivable is valid.
+* A logic is _complete_ if everything that is valid is derivable.
+
+We can prove that Hoare logic is sound and complete.
+-/
+
+theorem hoare_sound P c Q : valid_hoare_triple P c Q → Derivable P c Q := by
+  intro ht
+  induction c generalizing P Q with
+  | c_skip =>
+    apply h_consequence_pre
+    . constructor
+    . intro st hP
+      apply ht
+      . assumption
+      . exact e_skip
+  | c_asgn =>
+    apply h_consequence_pre
+    . constructor
+    . intro st hP
+      apply ht
+      . assumption
+      . apply e_asgn; rfl
+  | _ => sorry
+
+/-
+The proof of completeness is more challenging.
+To carry out the proof, we need to invent some intermediate assertions using a technical device known as _weakest preconditions_.
+Given a command `c` and a desired postcondition assertion `Q`, the weakest precondition `wp c Q` is an assertion `P` such that `{P} c {Q}` holds, and moreover, for any other assertion `P'`, if `{P'} c {Q}` holds then `P' ->> P`.
+
+Another way of stating that idea is that `wp c Q` is the following assertion:
+-/
+
+def wp (c : Com) (Q : Assertion) : Assertion :=
+  fun s => ∀ s', (s =[<[c]>]=> s') → Q s'
+
+/-
+The following two theorems show that the two ways of thinking about wp are the same.
+-/
+
+theorem wp_is_precondition c Q : {* wp c Q *} c {* Q *} := by
+  unfold wp
+  intro st st' hpre heval
+  apply hpre; assumption
+
+theorem wp_is_weakest c Q P' : {* P' *} c {* Q *} → (P' ->> wp c Q) := by
+  intro ht st hP' st' heval
+  apply ht <;> assumption
+
+/-
+Weakest preconditions are useful because they enable us to identify assertions that otherwise would require clever thinking.
+The next two lemmas show that in action.
+-/
+
+/-
+exercise (1-star)
+What if we have a sequence `c₁; c₂`, but not an intermediate assertion for what should hold in between `c₁` and `c₂`?
+No problem.
+Prove that `wp c₂ Q` suffices as such an assertion.
+-/
+
+theorem wp_seq P Q c₁ c₂
+    : Derivable P c₁ (wp c₂ Q) → Derivable (wp c₂ Q) c₂ Q
+      → Derivable P (c_seq c₁ c₂) Q := by
+  sorry
+
+/-
+exercise (2-star)
+What if we have a `while` loop, but not an invariant for it?
+No problem.
+Prove that for any `Q`, assertion `wp (while b do c end) Q` is a loop invariant of `while b do c end`.
+-/
+
+theorem wp_invariant b c Q : valid_hoare_triple
+    (fun st => wp (c_while b c) Q st ∧ beval st b) c (wp (c_while b c) Q) := by
+  sorry
+
+/-
+Now we are ready to prove the completeness of Hoare logic.
+For the `while` case, we'll use the invariant suggested by `wp_invariant`.
+-/
+
+theorem hoare_complete P c Q : Derivable P c Q → valid_hoare_triple P c Q := by
+  unfold valid_hoare_triple
+  induction c generalizing P Q with intro ht
+  | _ => sorry
+
+/-
+## Decidability
+
+We might hope that Hoare logic would be _decidable_; that is, that there would be an (terminating) algorithm (a _decision procedure_) that can determine whether or not a given Hoare triple is valid or derivable.
+Sadly, such a decision procedure cannot exist.
+
+Consider the triple `{True} c {False}`.
+This triple is valid if and only if `c` is non-terminating.
+So any algorithm that could determine validity of arbitrary triples could solve the Halting Problem.
+
+Similarly, the triple `{True} skip {P}` is valid if and only if `∀ s, P s` is valid, where `P` is an arbitrary assertion of Lean's logic.
+But this logic is far too powerful to be decidable.
+-/
+
+/-
 ## references
 * [Software Foundations, Volume 2 Programming Language Foundations: Hoare Logic, Part 2](https://softwarefoundations.cis.upenn.edu/plf-current/Hoare2.html)
+* [Software Foundations, Volume 2 Programming Language Foundations: Hoare Logic as a Logic](https://softwarefoundations.cis.upenn.edu/plf-current/HoareAsLogic.html)
 -/

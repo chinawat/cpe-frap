@@ -202,6 +202,7 @@ macro "verify_assertion" : tactic =>
     intros <;>
     (try simp at *) <;>
     (repeat' apply And.intro <;> repeat' split) <;>
+    (try simp [*] at *) <;>
     (try omega)
   )
 
