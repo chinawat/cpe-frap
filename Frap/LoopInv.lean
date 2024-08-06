@@ -288,7 +288,7 @@ Here's a program that squares `x` by repeated addition:
 
 The first thing to note is that the loop reads `x` but doesn't change its value.
 In such cases, it can be a good idea to add `x = m` to the loop invariant.
-If we look at how `z` progresses inthe loop, `z = m` after the 1st iteration, `z = 2*m` after the 2nd iteration, and `z = m*m` at the end.
+If we look at how `z` progresses in the loop, `z = m` after the 1st iteration, `z = 2*m` after the 2nd iteration, and `z = m*m` at the end.
 Since `y` tracks how many times we go through the loop, this leads us to derive a loop invariant candidate: `z = y * m ∧ x = m`, which makes the proof go through.
 ```
   { x = m } ->>
@@ -501,7 +501,7 @@ theorem hoare_sound P c Q : valid_hoare_triple P c Q → Derivable P c Q := by
     . intro st hP
       apply ht
       . assumption
-      . exact e_skip
+      . apply e_skip
   | c_asgn =>
     apply h_consequence_pre
     . constructor
