@@ -466,14 +466,16 @@ As an example, let's construct a proof tree for
 ```
 -/
 
--- example :
---     Derivable
---       (fun st => (fun st' => st' x = 3) (st[x ↦ aeval st <{x + 2}>][x ↦ aeval st <{x + 1}>]))
---         <{ x := x + 1; x := x + 2 }>
---       (fun st => st x = 3) := by
---   apply h_seq
---   . apply h_asgn
---   . apply h_asgn (fun st => (fun st' => st' x = 3) (st[x ↦ aeval st <{x + 2}>]))
+example :
+    Derivable
+      (fun st => (st x + 2) + 1 = 3)
+        <{ x := x + 1; x := x + 2 }>
+      (fun st => st x = 3) := by
+  apply h_seq
+  . apply h_asgn
+  . apply h_consequence_pre
+    . apply h_asgn
+    . verify_assertion
 
 /-
 ## Soundness and completeness
@@ -492,24 +494,33 @@ There are two pieces to answering it:
 We can prove that Hoare logic is sound and complete.
 -/
 
-theorem hoare_sound P c Q : valid_hoare_triple P c Q → Derivable P c Q := by
-  intro ht
-  induction c generalizing P Q with
-  | c_skip =>
-    apply h_consequence_pre
-    . constructor
-    . intro st hP
-      apply ht
-      . assumption
-      . apply e_skip
-  | c_asgn =>
-    apply h_consequence_pre
-    . constructor
-    . intro st hP
-      apply ht
-      . assumption
-      . apply e_asgn; rfl
-  | _ => sorry
+theorem hoare_sound P c Q : Derivable P c Q → valid_hoare_triple P c Q := by
+  unfold valid_hoare_triple
+  intro h
+  induction h with
+  | h_skip => apply hoare_skip
+  | h_asgn => apply hoare_asgn
+  | h_seq =>
+    rename_i ih₁ ih₂
+    apply hoare_seq
+    . apply ih₁
+    . apply ih₂
+  | h_if =>
+    rename_i ih₁ ih₂
+    apply hoare_if
+    . apply ih₁
+    . apply ih₂
+  | h_while =>
+    rename_i ih
+    apply hoare_while
+    apply ih
+  | h_consequence =>
+    rename_i ih
+    apply hoare_consequence
+    . apply ih
+    . assumption
+    . assumption
+
 
 /-
 The proof of completeness is more challenging.
@@ -523,7 +534,7 @@ def wp (c : Com) (Q : Assertion) : Assertion :=
   fun s => ∀ s', (s =[<[c]>]=> s') → Q s'
 
 /-
-The following two theorems show that the two ways of thinking about wp are the same.
+The following two theorems show that the two ways of thinking about `wp` are the same.
 -/
 
 theorem wp_is_precondition c Q : {* wp c Q *} c {* Q *} := by
@@ -568,10 +579,48 @@ Now we are ready to prove the completeness of Hoare logic.
 For the `while` case, we'll use the invariant suggested by `wp_invariant`.
 -/
 
-theorem hoare_complete P c Q : Derivable P c Q → valid_hoare_triple P c Q := by
+theorem hoare_complete P c Q : valid_hoare_triple P c Q → Derivable P c Q := by
   unfold valid_hoare_triple
-  induction c generalizing P Q with intro ht
-  | _ => sorry
+  intro ht
+  induction c generalizing P Q with
+  | c_skip =>
+    apply h_consequence_pre
+    . constructor
+    . intro st hP
+      apply ht
+      . assumption
+      . apply e_skip
+  | c_asgn x a =>
+    apply h_consequence_pre
+    . constructor
+    . intro st hP
+      apply ht
+      . assumption
+      . apply e_asgn; rfl
+  | c_seq c₁ c₂ ih₁ ih₂ =>
+    apply wp_seq
+    . sorry
+    . sorry
+  | c_if b c₁ c₂ ih₁ ih₂ =>
+    apply h_if
+    . apply ih₁
+      intro st st' hpre he1
+      obtain ⟨⟩ := hpre
+      apply ht
+      . assumption
+      . apply e_ifTrue
+        . assumption
+        . exact he1
+    . apply ih₂
+      intro st st' hpre he2
+      obtain ⟨⟩ := hpre
+      apply ht
+      . assumption
+      . apply e_ifFalse
+        . simp [*] at *
+        . exact he2
+  | c_while b c ih =>
+    sorry
 
 /-
 ## Decidability
