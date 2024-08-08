@@ -599,8 +599,13 @@ theorem hoare_complete P c Q : valid_hoare_triple P c Q → Derivable P c Q := b
       . apply e_asgn; rfl
   | c_seq c₁ c₂ ih₁ ih₂ =>
     apply wp_seq
-    . sorry
-    . sorry
+    . apply ih₁
+      unfold wp
+      intro st st' hP he₁ st'' he₂
+      apply ht <;> assumption
+      apply e_seq <;> assumption
+    . apply ih₂
+      apply wp_is_precondition
   | c_if b c₁ c₂ ih₁ ih₂ =>
     apply h_if
     . apply ih₁
@@ -620,7 +625,19 @@ theorem hoare_complete P c Q : valid_hoare_triple P c Q → Derivable P c Q := b
         . simp [*] at *
         . exact he2
   | c_while b c ih =>
-    sorry
+    apply h_consequence P Q _ (fun st => wp (c_while b c) Q st ∧ ¬(beval st b))
+    . apply h_while
+      apply ih
+      apply wp_invariant
+    . intro st hP st'
+      apply ht
+      exact hP
+    . intro st; simp
+      intro hinvpost hbfalse
+      apply wp_is_precondition
+      . exact hinvpost
+      . apply e_whileFalse
+        exact hbfalse
 
 /-
 ## Decidability
