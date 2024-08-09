@@ -602,7 +602,7 @@ theorem hoare_complete P c Q : valid_hoare_triple P c Q → Derivable P c Q := b
     . apply ih₁
       unfold wp
       intro st st' hP he₁ st'' he₂
-      apply ht <;> assumption
+      apply ht <;> try assumption
       apply e_seq <;> assumption
     . apply ih₂
       apply wp_is_precondition

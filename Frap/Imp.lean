@@ -142,7 +142,7 @@ inductive AEvalR : AExp → Nat → Prop :=
 We can introduce a notation that makes expressions look more natural in Lean code.
 We'll write `e ==> n` to mean that arithmetic expression `e` evaluates to value `n`, i.e, `AEvalR e n`.
 -/
-infix:90 " ==> " => AEvalR
+local infix:90 " ==> " => AEvalR
 
 /-
 It is (almost) straightforward to prove that the relational and functional definitions of evaluation agree.
