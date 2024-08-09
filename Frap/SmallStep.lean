@@ -265,8 +265,16 @@ theorem strong_progress t : Value t ∨ ∃t', Step t t' := by
     cases ih₁ <;> rename_i h₁
     . cases h₁
       cases ih₂ <;> rename_i h₂
-      . sorry
-      . sorry
+      . cases h₂
+        rename_i n₁ n₂
+        exists c (n₁ + n₂)
+        apply st_plusConstConst
+      . obtain ⟨t₂', hst⟩:= h₂
+        rename_i n₁
+        exists p (c n₁) t₂'
+        apply st_plus2
+        . apply v_const
+        . exact hst
     . obtain ⟨t₁', hst⟩ := h₁
       exists (p t₁' t₂)
       apply st_plus1
@@ -278,7 +286,8 @@ This important property is called _strong progress_, because every term either i
 
 The idea of "making progress" can be extended to tell us something interesting about values: they are exactly the terms that _cannot_ make progress in this sense.
 
-To state this observation formally, let's begin by giving a name to "terms that cannot make progress." We'll call them _normal forms_.
+To state this observation formally, let's begin by giving a name to "terms that cannot make progress."
+We'll call them _normal forms_.
 -/
 
 def normal_form {X : Type} (R : relation X) (t : X) : Prop := ¬∃t', R t t'
@@ -293,8 +302,8 @@ We can use this terminology to generalize the observation we made in the strong 
 theorem value_is_nf v : Value v → normal_form Step v := by
   unfold normal_form
   intro h; cases h
-  intro contra; cases contra
-  rename_i h; cases h
+  intro contra; obtain ⟨_, hst⟩ := contra
+  cases hst
 
 theorem nf_is_value t : normal_form Step t → Value t := by
   unfold normal_form
@@ -338,6 +347,8 @@ inductive Multi {X : Type} (R : relation X) : relation X :=
   | multi_refl x : Multi R x x
   | multi_step x y z : R x y → Multi R y z → Multi R x z
 
+open Multi
+
 /-
 The effect of this definition is that `Multi R` relates two elements `x` and `y` if
 * `x = y`, or
@@ -368,7 +379,10 @@ Second, it contains `R`; that is, single-step reductions are a particular case o
 -/
 
 theorem multi_R (X : Type) (R : relation X) x y : R x y → Multi R x y := by
-  sorry
+  intro hR
+  apply multi_step
+  . assumption
+  . apply multi_refl
 
 /-
 Third, `Multi R` is _transitive_.
@@ -376,7 +390,14 @@ Third, `Multi R` is _transitive_.
 
 theorem multi_trans (X : Type) (R : relation X) x y z
     : Multi R x y → Multi R y z → Multi R x z := by
-  sorry
+  intro hxy hyz
+  induction hxy generalizing z with
+  | multi_refl => exact hyz
+  | multi_step  =>
+    rename_i xy _ ih
+    apply multi_step
+    . apply xy
+    . apply ih; apply hyz
 
 /-
 In particular, for the multi step relation on terms, if `t₁ ~~>* t₂` and `t₂ ~~>* t₃`, then `t₁ ~~>* t₃`.
