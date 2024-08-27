@@ -36,8 +36,6 @@ To save space in the discussion, let's go back to an incredibly simple language 
 Later on, we'll see how to apply the same techniques to the full Imp language.
 -/
 
-namespace Toy
-
 inductive Tm : Type :=
   | c : Nat → Tm      /- constant -/
   | p : Tm → Tm → Tm  /- plus -/
@@ -446,7 +444,13 @@ First, we observe that, if `t` reduces to `t'` in many steps, then the same sequ
 
 theorem multistep_congr_1 t₁ t₁' t₂
     : (t₁ ~~>* t₁') → (p t₁ t₂ ~~>* p t₁' t₂) := by
-  sorry
+  intro h
+  induction h with
+  | multi_refl => apply multi_refl
+  | multi_step t₁ t₁' t₁'' h1 _ ih =>
+    apply multi_step
+    . apply st_plus1; apply h1
+    . apply ih
 
 /-
 exercise (2-star)
@@ -475,7 +479,32 @@ There are two cases to consider:
 -/
 
 theorem step_normalizing : normalizing Step := by
-  sorry
+  unfold normalizing
+  intro t
+  induction t with
+  | c n =>
+    exists c n
+    constructor
+    . apply multi_refl
+    . rw [nf_same_as_value]; apply v_const
+  | p t₁ t₂ ih₁ ih₂ =>
+    obtain ⟨t₁', ⟨hs₁, hn₁⟩⟩ := ih₁
+    obtain ⟨t₂', ⟨hs₂, hn₂⟩⟩ := ih₂
+    rw [nf_same_as_value] at hn₁
+    rw [nf_same_as_value] at hn₂
+    cases hn₁; cases hn₂
+    rename_i n₁ n₂
+    exists c (n₁ + n₂)
+    constructor
+    . apply multi_trans
+      . apply multistep_congr_1
+        apply hs₁
+      . apply multi_trans
+        . apply multistep_congr_2
+          apply hs₂
+        . apply multi_R
+          apply st_plusConstConst
+    . rw [nf_same_as_value]; apply v_const
 
 /-
 ### Equivalence of big-step and small-step
@@ -491,6 +520,27 @@ We consider the two implications separately.
 exercise (3-star)
 -/
 theorem eval__multistep t n : (t ==> n) → (t ~~>* c n) := by
+/-
+The key idea in the proof can be seen as follows:
+```
+  p t₁ t₂ ~~>          (by st_plus1)
+  p t₁' t₂ ~~>         (by st_plus1)
+  p t₁'' t₂ ~~>        (by st_plus1)
+  ...
+  p (c v₁) t₂ ~~>      (by st_plus2)
+  p (c v₁) t₂' ~~>     (by st_plus2)
+  p (c v₁) t₂'' ~~>    (by st_plus2)
+  ...
+  p (c v₁) (c v₂) ~~>  (by st_plusConstConst)
+  c (v₁ + v₂)
+```
+That is, the multistep reduction of a term of the form `P t₁ t₂` proceeds in three phases:
+* First, we use `st_plus1` some number of times to reduce `t₁` to a normal form, which must (by `nf_same_as_value`) be a term of the form `c v₁` for some `v₁`.
+* Next, we use `st_plus2` some number of times to reduce `t₂` to a normal form, which must again by a term of the form `c v₂` for some `v₂`.
+* Finally, we use `st_plusConstConst` once to reduce `p (c v₁) (c v₂)` to `c (v₁ + v₂)`.
+
+To formalize this intuition, you'll need to use the congruence lemmas from above (you might want to review them now, so that you'll be able to recognize when they are useful), plus some basic properties of `~~>*`: that it is reflexive, transitive, and includes `~~>`.
+-/
   sorry
 
 /-
@@ -501,10 +551,10 @@ For the other direction, we need one lemma, which establishes a relation between
 exercise (3-star)
 -/
 theorem step__eval t t' n
-    : (t ~~> t') → (t' ==> n) → t ==> n := by
+    : Step t t' → (t' ==> n) → t ==> n := by
   intro Hs
-  induction Hs generalizing n
-  all_goals sorry
+  induction Hs generalizing n with (intro he; cases he)
+  | _ => sorry
 
 /-
 The fact that small-step reduction implies big-step evaluation is now straightforward to prove.
@@ -520,7 +570,61 @@ exercise (3-star)
 theorem multistep__eval t t' : normal_form_of t t' → ∃n, t' = c n ∧ t ==> n := by
   sorry
 
-end Toy
+/-
+### Additional exercises
+
+We've considered arithmetic expressions.
+This exercise explores how they interact with conditional expressions.
+-/
+
+namespace Combined
+
+inductive Tm : Type :=
+  | c : Nat → Tm
+  | p : Tm → Tm → Tm
+  | tru : Tm
+  | fls : Tm
+  | test : Tm → Tm → Tm → Tm
+
+open Tm
+
+inductive Value : Tm → Prop :=
+  | v_const n : Value (c n)
+  | v_tru : Value tru
+  | v_fls : Value fls
+
+open Value
+
+inductive Step : Tm → Tm → Prop :=
+  | st_plusConstConst n₁ n₂ : Step (p (c n₁) (c n₂)) (c (n₁ + n₂))
+  | st_plus1 t₁ t₁' t₂ : Step t₁ t₁' → Step (p t₁ t₂) (p t₁' t₂)
+  | st_plus2 n₁ t₂ t₂' : Step t₂ t₂' → Step (p (c n₁) t₂) (p (c n₁) t₂')
+  | st_ifTrue t₁ t₂ : Step (test tru t₁ t₂) t₁
+  | st_ifFalse t₁ t₂ : Step (test fls t₁ t₂) t₂
+  | st_if t₀ t₀' t₁ t₂ : Step t₀ t₀' → Step (test t₀ t₁ t₂) (test t₀' t₁ t₂)
+
+open Step
+
+/-
+Formally prove or disprove these two properties for the combined language.
+-/
+
+/-
+exercise (3-star)
+-/
+theorem combined_step_deterministic
+    : deterministic Step ∨ ¬ deterministic Step := by
+  sorry
+
+/-
+exercise (3-star)
+-/
+theorem combined_strong_progress
+    : (∀ t, Value t ∨ ∃ t', Step t t') ∨ ¬ (∀ t, Value t ∨ ∃ t', Step t t')
+    := by
+  sorry
+
+end Combined
 
 /-
 ## references
