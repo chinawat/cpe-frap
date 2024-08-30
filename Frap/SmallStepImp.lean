@@ -89,11 +89,11 @@ inductive BStep (st : State) : BExp → BExp → Prop :=
   | bs_andStep : ∀ b₁ b₁' b₂,
       BStep st b₁ b₁'
       → BStep st (b_and b₁ b₂) (b_and b₁' b₂)
+  | bs_andFalse : ∀ b₂,
+      BStep st (b_and b_false b₂) b_false
   | bs_andTrueStep : ∀ b₂ b₂',
       BStep st b₂ b₂'
       → BStep st (b_and b_true b₂) (b_and b_true b₂')
-  | bs_andFalse : ∀ b₂,
-      BStep st (b_and b_false b₂) b_false
   | bs_andTrueTrue :
       BStep st (b_and b_true b_true) b_true
   | bs_andTrueFalse :
@@ -101,11 +101,11 @@ inductive BStep (st : State) : BExp → BExp → Prop :=
   | bs_orStep : ∀ b₁ b₁' b₂,
       BStep st b₁ b₁'
       → BStep st (b_or b₁ b₂) (b_or b₁' b₂)
+  | bs_orTrue : ∀ b₂,
+      BStep st (b_or b_true b₂) b_true
   | bs_orFalseStep : ∀ b₂ b₂',
       BStep st b₂ b₂'
       → BStep st (b_or b_false b₂) (b_or b_false b₂')
-  | bs_orTrue : ∀ b₂,
-      BStep st (b_or b_true b₂) b_true
   | bs_orFalseTrue :
       BStep st (b_or b_false b_true) b_true
   | bs_orFalseFalse :
@@ -156,7 +156,7 @@ For example:
 * This program sets `x` to `0` in one thread and `1` in another, leaving it set to either `0` or `1` at the end:
     `x := 0 <|> x := 1`
 * This one leaves `x` set to one of `0`, `1`, `2`, or `3` at the end:
-    `x := 0; (x := x+2 <|> x := x + 1 <|> x := 0)`
+    `x := 0; (x := x + 2 <|> x := x + 1 <|> x := 0)`
 -/
 
 namespace CImp

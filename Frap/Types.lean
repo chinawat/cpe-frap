@@ -101,17 +101,7 @@ def stuck (t: Tm) : Prop :=
 exercise (2-star)
 -/
 example : ∃ t, stuck t := by
-  -- sorry
-  exists scc tru
-  constructor
-  . intro contra
-    obtain ⟨_, contra⟩ := contra
-    cases contra
-    rename_i contra; cases contra
-  . intro contra; cases contra
-    . rename_i contra; cases contra
-    . rename_i contra; cases contra
-      rename_i contra; cases contra
+  sorry
 
 /-
 However, although values and normal forms are _not_ the same in this language, the set of values is a subset of the set of normal forms.
@@ -158,7 +148,7 @@ inductive HasType : Tm → Ty → Prop :=
   | t_0 : HasType zro nat
   | t_succ t₁ : HasType t₁ nat → HasType (scc t₁) nat
   | t_pred t₁ : HasType t₁ nat → HasType (prd t₁) nat
-  | t_iszero t₁ : HasType t₁ nat → HasType (iszero t₁) nat
+  | t_iszero t₁ : HasType t₁ nat → HasType (iszero t₁) bool
 
 open HasType
 
@@ -175,7 +165,7 @@ It's important to realize that the typing relation is a _conservative_ (or _stat
 In particular, it does not calculate the type of its normal form.
 -/
 
-example  -- `⊢ if false then zero else true ∈ bool`
+example  -- `⊢ if false then zero else true ∉ bool`
     : ¬ HasType (ite fls zro tru) bool := by
   intro contra
   cases contra
@@ -254,7 +244,7 @@ theorem progress t T
     . -- t₁ can take a step
       rename_i h
       obtain ⟨t₁', h₁⟩ := h
-      exists (ite t₁' t₂ t₃)
+      exists ite t₁' t₂ t₃
       apply st_if; exact h₁
   | _ => sorry
 
@@ -306,7 +296,7 @@ theorem preservation t t' T
 /-
 exercise (3-star)
 Now prove the same property again by induction on the _evaluation_ derivation instead of on the typing derivation.
-Begin by carefuling reading and thinking about the first few lines of the above proofs to make sure you understand what each one is doing.
+Begin by carefully reading and thinking about the first few lines of the above proofs to make sure you understand what each one is doing.
 The setup for this proof is similar, but not exactly the same.
 -/
 
