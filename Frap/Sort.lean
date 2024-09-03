@@ -14,7 +14,7 @@ In this lecture, we introduce some techniques for reasoning about
 
 Later on, we'll apply these proof techniques to reasoning about algorithms and data structures.
 
-## The less-than order n the natural numbers
+## The less-than order on the natural numbers
 
 In our proofs about searching and sorting algorithms, we often have to reason about the less-than order on natural numbers.
 Recall that we write `x < y` for the proposition that `x` is less than `y`:
@@ -99,7 +99,7 @@ theorem maybe_swap_idempotent al
   rename_i a ar
   cases ar <;> try rfl
   rename_i b ar
-  simp [maybe_swap]
+  simp
   let h := Decidable.or_not_self (b < a)
   cases h
   . simp [*]; intro h'; omega
@@ -156,7 +156,7 @@ theorem permutation_nil_cons (l : List α) (x : α)
     apply ih₂
     apply Eq.symm
     apply permutation_nil
-    apply hp₁
+    exact hp₁
 
 /-
 Permutation over lists is an equivalence relation.
@@ -164,14 +164,14 @@ Permutation over lists is an equivalence relation.
 
 theorem permutation_refl (l : List α) : Permutation l l := by
   induction l with
-  | nil => constructor
-  | cons => constructor; assumption
+  | nil => exact perm_nil
+  | cons a al ih => apply perm_skip; exact ih
 
 theorem permutation_symm (l l' : List α)
     : Permutation l l' → Permutation l' l := by
   intro h
   induction h with
-  | perm_nil => apply perm_nil
+  | perm_nil => exact perm_nil
   | perm_skip => apply perm_skip; assumption
   | perm_swap => apply perm_swap
   | perm_trans => apply perm_trans <;> assumption
@@ -197,11 +197,9 @@ theorem permutation_app_tail (l l' tl : List α)
 theorem permutation_app_head (l tl tl' : List α)
     : Permutation tl tl' → Permutation (l++tl) (l++tl') := by
   intro h
-  induction l generalizing tl tl' with simp
-  | nil => assumption
-  | cons a al ih =>
-    apply perm_skip
-    apply ih; assumption
+  induction l with simp
+  | nil => exact h
+  | cons a al ih => apply perm_skip; exact ih
 
 theorem permutation_app (l m l' m' : List α)
     : Permutation l l' → Permutation m m'
@@ -265,7 +263,7 @@ Now we can prove that `maybe_swap` is a permutation: it reorders elements but do
 theorem maybe_swap_perm al : Permutation al (maybe_swap al) := by
   unfold maybe_swap
   cases al with simp
-  | nil => constructor
+  | nil => exact perm_nil
   | cons a ar =>
     split
     . rename_i a' b' _ _
