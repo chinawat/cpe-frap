@@ -147,7 +147,16 @@ theorem permutation_nil (l : List α) : Permutation [] l → l = [] := by
 
 theorem permutation_nil_cons (l : List α) (x : α)
     : ¬ Permutation [] (x::l) := by
-  sorry
+  generalize heq₁ : [] = l₀
+  generalize heq₂ : x::l = l₁
+  intro contra
+  induction contra with simp [*] at *
+  | perm_trans l' l'' l''' hp₁ hp₂ ih₁ ih₂ =>
+    subst l' l'''
+    apply ih₂
+    apply Eq.symm
+    apply permutation_nil
+    apply hp₁
 
 /-
 Permutation over lists is an equivalence relation.
@@ -162,7 +171,7 @@ theorem permutation_symm (l l' : List α)
     : Permutation l l' → Permutation l' l := by
   intro h
   induction h with
-  | perm_nil => constructor
+  | perm_nil => apply perm_nil
   | perm_skip => apply perm_skip; assumption
   | perm_swap => apply perm_swap
   | perm_trans => apply perm_trans <;> assumption
@@ -170,16 +179,64 @@ theorem permutation_symm (l l' : List α)
 theorem permutation_trans (l l' l'' : List α)
     : Permutation l l' → Permutation l' l''
       → Permutation l l'' := by
-  intro h₁ h₂
-  apply perm_trans <;> assumption
+  apply perm_trans
 
 /-
 Compatibility with other operations on lists
 -/
 
+theorem permutation_app_tail (l l' tl : List α)
+    : Permutation l l' → Permutation (l++tl) (l'++tl) := by
+  intro h
+  induction h with try simp
+  | perm_nil => apply permutation_refl
+  | perm_skip => apply perm_skip; assumption
+  | perm_swap => apply perm_swap
+  | perm_trans => apply perm_trans <;> assumption
+
+theorem permutation_app_head (l tl tl' : List α)
+    : Permutation tl tl' → Permutation (l++tl) (l++tl') := by
+  intro h
+  induction l generalizing tl tl' with simp
+  | nil => assumption
+  | cons a al ih =>
+    apply perm_skip
+    apply ih; assumption
+
 theorem permutation_app (l m l' m' : List α)
     : Permutation l l' → Permutation m m'
       → Permutation (l++m) (l'++m') := by
+  sorry
+
+theorem permutation_add_inside a (l l' tl tl' : List α)
+    : Permutation l l' → Permutation tl tl'
+      → Permutation (l ++ a :: tl) (l' ++ a :: tl') := by
+  sorry
+
+theorem permutation_cons_append (l : List α) x
+    : Permutation (x :: l) (l ++ [x]) := by
+  sorry
+
+theorem permutation_app_comm (l l' : List α)
+    : Permutation (l ++ l') (l' ++ l) := by
+  sorry
+
+theorem permutation_app_rot (l₁ l₂ l₃ : List α)
+    : Permutation (l₁ ++ l₂ ++ l₃) (l₂ ++ l₃ ++ l₁) := by
+  sorry
+
+theorem permutation_app_swap_app (l₁ l₂ l₃ : List α)
+    : Permutation (l₁ ++ l₂ ++ l₃) (l₂ ++ l₁ ++ l₃) := by
+  sorry
+
+theorem permutation_app_middle (l l₁ l₂ l₃ l₄ : List α)
+    : Permutation (l₁ ++ l₂) (l₃ ++ l₄)
+      → Permutation (l₁ ++ l ++ l₂) (l₃ ++ l ++ l₄) := by
+  sorry
+
+theorem permutation_cons_app (l l₁ l₂ : List α)
+    : Permutation l (l₁ ++ l₂)
+      → Permutation (a :: l) (l₁ ++ a :: l₂) := by
   sorry
 
 theorem permutation_cons_inv (l l' : List α) a
