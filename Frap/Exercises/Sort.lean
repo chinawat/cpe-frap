@@ -6,6 +6,13 @@ open Permutation
 open Sorted
 
 /-
+exercise (2-star)
+Prove the following fact by using only constructors in the `Permutation` relation.
+-/
+example : Permutation [1, 2, 3] [2, 3, 1] := by
+  sorry
+
+/-
 exercise (3-star)
 Prove that insertion maintains sortedness.
 -/
