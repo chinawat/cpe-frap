@@ -85,7 +85,7 @@ theorem union_swap a b c : union a (union b c) = union b (union a c) := by
 Note that this is not an efficient implementation of multisets.
 We wouldn't want to use it for programs with high performance requirements.
 But we are using multisets for specifications, not for programs.
-We don't intend to build large multisets, only to use them in verifyin algorithms such as insertion sort.
+We don't intend to build large multisets, only to use them in verify in algorithms such as insertion sort.
 So this inefficiency is not a problem.
 
 ## Specification of sorting
@@ -102,8 +102,8 @@ open List
 
 @[simp] def contents (al : List Value) : Multiset :=
   match al with
-  | nil => empty
-  | cons a bl => union (singleton a) (contents bl)
+  | [] => empty
+  | a :: bl => union (singleton a) (contents bl)
 
 /-
 The insertion-sort program `sort` from [Sort] preserves the contents of a list.
@@ -329,6 +329,8 @@ def selsort (l : List Nat) (n : Nat) : List Nat :=
 If fuel runs out, we get the wrong output.
 -/
 
+#eval selsort [3, 1, 4, 1, 5] 3
+
 example : selsort [3, 1, 4, 1, 5] 3 ≠ [1, 1, 3, 4, 5] := by
   intro contra; cases contra
 
@@ -369,7 +371,7 @@ theorem select_perm x l y r
   induction l generalizing x y r with simp at *
   | nil =>
     obtain ⟨⟩ := h
-    subst x r
+    subst y r
     apply permutation_refl
   | cons a as ih =>
     split at h
