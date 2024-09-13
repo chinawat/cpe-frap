@@ -534,3 +534,9 @@ exercise (1-star)
 
 theorem selection_sort_correct' : is_a_sorting_algorithm' selection_sort := by
   sorry
+
+/-
+## references
+* [Software Foundations, Volume 3 Verified Functional Algorithms: Insertion Sort Verified with Multisets](https://softwarefoundations.cis.upenn.edu/vfa-current/Multiset.html)
+* [Software Foundations, Volume 3 Verified Functional Algorithms: Selection Sort](https://softwarefoundations.cis.upenn.edu/vfa-current/Selection.html)
+-/
