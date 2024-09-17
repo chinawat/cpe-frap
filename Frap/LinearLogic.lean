@@ -270,6 +270,9 @@ inductive ValidLinearJudgment : List LinearTerm → LinearTerm → Prop :=
   | vl_exchange Δ Δ' A :
       Permutation Δ Δ' → ValidLinearJudgment Δ A
       → ValidLinearJudgment Δ' A
+  | vl_trans Δ Δ' A C :
+      ValidLinearJudgment Δ A → ValidLinearJudgment (Δ' ++ [A]) C
+      → ValidLinearJudgment (Δ ++ Δ') C
   | vl_tensor_i Δ Δ' A B :
       ValidLinearJudgment Δ A → ValidLinearJudgment Δ' B
       → ValidLinearJudgment (Δ ++ Δ') (A ⊗ B)

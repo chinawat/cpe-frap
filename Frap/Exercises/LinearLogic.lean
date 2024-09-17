@@ -9,9 +9,6 @@ open ValidLinearJudgment
 theorem tensor_dist_plus_r' a b c : [] ⊩ (a ⊕ b) ⊗ c ≣ (a ⊗ c) ⊕ (b ⊗ c) := by
   sorry
 
-theorem lolli_dist_with_l' a b c : [] ⊩ a ⊸ (b & c) ≣ (a ⊸ b) & (a ⊸ c) := by
-  sorry
-
 theorem linear_curry' a b c : [(a ⊗ b) ⊸ c] ⊩ a ⊸ b ⊸ c := by
   sorry
 
@@ -23,23 +20,14 @@ Prove that tensor, with, and plus are commutative.
 -/
 
 theorem tensor_comm a b : [] ⊩ a ⊗ b ≣ b ⊗ a := by
-  sorry
+  have h a b : [] ⊩ a ⊗ b ⊸ b ⊗ a := by
+    sorry
+  apply vl_with_i
+  . apply h a b
+  . apply h b a
 
 theorem with_comm a b : [] ⊩ a & b ≣ b & a := by
   sorry
 
 theorem plus_comm a b : [] ⊩ a ⊕ b ≣ b ⊕ a := by
-  sorry
-
-/-
-Prove that tensor, with, and plus are associative.
--/
-
-theorem tensor_assoc a b c : [] ⊩ (a ⊗ b) ⊗ c ≣ a ⊗ (b ⊗ c) := by
-  sorry
-
-theorem with_assoc a b c : [] ⊩ (a & b) & c ≣ a & (b & c) := by
-  sorry
-
-theorem plus_assoc a b c : [] ⊩ (a ⊕ b) ⊕ c ≣ a ⊕ (b ⊕ c) := by
   sorry
