@@ -270,7 +270,7 @@ inductive ValidLinearJudgment : List LinearTerm → LinearTerm → Prop :=
   | vl_exchange Δ Δ' A :
       Permutation Δ Δ' → ValidLinearJudgment Δ A
       → ValidLinearJudgment Δ' A
-  | vl_trans Δ Δ' A C :
+  | vl_subst Δ Δ' A C :
       ValidLinearJudgment Δ A → ValidLinearJudgment (Δ' ++ [A]) C
       → ValidLinearJudgment (Δ ++ Δ') C
   | vl_tensor_i Δ Δ' A B :
@@ -316,6 +316,12 @@ inductive ValidLinearJudgment : List LinearTerm → LinearTerm → Prop :=
 open ValidLinearJudgment
 
 infix:10 " ⊩ " => ValidLinearJudgment
+
+theorem valid_subst Δ Δ' a c :
+    (Δ ⊩ a) → (Δ' ++ [a] ⊩ c)
+    → (Δ ++ Δ' ⊩ c) := by
+  intro ha hac
+  sorry
 
 /-
 Using our intuitive understanding of the connectives, we can decide various judgments.
