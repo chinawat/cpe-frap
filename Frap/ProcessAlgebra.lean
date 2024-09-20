@@ -178,7 +178,7 @@ _Proof_: The two premises respectively imply the existence of simulations R₁ a
 
 We now take a tour through some algebraic properties of refinement.
 
-Perhaps the greatest pay-off from the refinement approahc is that _refinement is a congruence for parallel composition_.
+Perhaps the greatest pay-off from the refinement approach is that _refinement is a congruence for parallel composition_.
 
 _Theorem_: If `p₁ ≤ p₁'` and `p₂ ≤ p₂'`, then `p₁ ‖ p₂ ≤ p₁' ‖ p₂'`.
 
