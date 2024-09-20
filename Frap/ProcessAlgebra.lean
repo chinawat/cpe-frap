@@ -102,6 +102,22 @@ Finally, a duplication can spawn a new copy ("thread") at any time.
   dup(p) → dup(p) ‖ p
 ```
 
+### Example
+
+Below is a tiny example of a process which consists of three parallel components. The channel name `x` is only known by the first two components.
+  `νx. (!x(z); done ‖ ?x(y). !y(x); ?x(y). done ‖ ?z(v). !v(v); done)`
+The first two components are able to communicate on the channel `x`, and the name `y` becomes bound to `z`.
+The next step in the process is therefore
+  `νx. (done ‖ !z(x); ?x(y). done ‖ ?z(v). !v(v); done)`
+Note that the remaining `y` is not affected because it is defined in an inner scope.
+The second and third parallel components can now communicate on the channel name `z`, and the name `v` becomes bound to `x`.
+The next step in the process is now
+  `νx. (done ‖ ?x(y). done ‖ !x(x); done)`
+Note that since the local name `x` has been output, the scope of `x` is extended to cover the third component as well.
+Finally, the channel `x` can be used for sending the name `x`.
+After that all concurrently executing processes have stopped.
+  `νx. (done ‖ done ‖ done)`
+
 ## Refinement between processes
 
 The labeled-transition-system approach may seem a bit unwieldy for just explaining the behavior of programs.
@@ -228,6 +244,36 @@ A concrete example of the Handoff theorem in action is a refinement like this on
 Note that, without the abstraction boundaries at the start, this fact would not be derivable.
 We would need to worry about meddlesome threads in our environment interacting directly with `c₁` or `c₂`, spoiling the protocol and forcing us to add extra cases to the right-hand side of the refinement.
 
+### Structural congruence
+
+Central to both the reduction semantics and the labelled transition semantics is the notion of _structural congruence_.
+Two processes are structurally congruent if they are identical up to structure.
+In particular, parallel composition is commutative and associative.
+
+More precisely, structural congruence is defined as the least equivalence relation preserved by the process constructs and satisfying the following axioms.
+
+* alpha conversion:
+ * `P` ≡ `Q` if `Q` can be obtained from `P` by renaming one of more bound variables in P.
+
+* axioms for parallel composition
+ * `P ‖ Q` ≡ `Q ‖ P`
+ * `(P ‖ Q) ‖ R` ≡ `P ‖ (Q ‖ R)`
+ * `P ‖ done` ≡ `P`
+
+* axioms for restriction
+ * `νx. νy. P` ≡ `νy. νx. P`
+ * `νx. done` ≡ `done`
+
+* axiom for replication
+ * `!P` ≡ `P ‖ !P`
+
+* axiom relating restriction and parallel
+ * `νx. (P ‖ Q)` ≡ ` (νx. P) ‖ Q` if `x` is not a free variable of `Q`
+
+This last axiom is known as the "scope extension" axiom.
+This axiom is central, since it describes how a bound name `x` may be extruded by an output action, causing the scope of `x` to be extended.
+In cases where `x` is a free variable of `Q`, alpha-conversion may be used to allow extension to proceed.
+
 ## Linear logic, revisited
 
 ### "Of course" modality
@@ -252,9 +298,9 @@ This just corresponds to an `exit` operation, eliminating the process.
 
 #### Fresh channel generation
 
-The `νx. P` operation simply creates a new name `x` for use in `P`.
-The freshness condition on `x` can be enforced easily by the corresponding condition when introducing the existential quantifier.
-  `gen: proc(νx. P) ⊸ ∃x, proc(P)`
+The `νx. P` operation simply creates a fresh name `c` for use in `P`.
+The freshness condition on `c` can be enforced easily by the corresponding condition when introducing the existential quantifier.
+  `gen: proc(νx. P) ⊸ ∃c, proc(P[x↦c])`
 
 #### Replication
 
