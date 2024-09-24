@@ -33,11 +33,11 @@ But:
 * A type may also depend on another type, such as the type constructor `List` or the polymorphic type `fun α : Type ↦ α → α` of functions with the same domain and codomain.
 * A term may depend on a type, such as the polymorphic identity function
     `fun α : Type ↦ fun x : α ↦ x`.
-* And, of course, a term maty also depend on a term, such as `fun n : ℕ ↦ n + 2`.
+* And, of course, a term may also depend on a term, such as `fun n : ℕ ↦ n + 2`.
 
 In summary, there are four cases for `fun x ↦ t`:
 * term `t` depending on term `x`: this is simply a function
-* type `t` depending on type `x`: this is a type construction (e.g., `List`)
+* type `t` depending on type `x`: this is a type constructor (e.g., `List`)
 * type `t` depending on term `x`: this is a dependent type (in the narrow sense, e.g., `pick` above)
 * term `t` depending on type `x`: this is a polymorphic term (e.g., the polymorphic identity function above)
 
@@ -58,6 +58,11 @@ When an argument is enclosed in curly braces, it is _implicit_, meaning Lean wil
 For example, we can write `cons 25 nil`, for which Lean infers that `n = 0`.
 
 Thus, the term `Vec.cons 3 (Vec.cons 1 Vec.nil)` has type `Vec Nat 2`.
+-/
+
+#check Vec.cons 3 (Vec.cons 1 Vec.nil)
+
+/-
 By encoding the vector length in the type, we can provide more precise information above the result of functions.
 A function such as `Vec.reverse`, which reverses a vector, would map a value `Vec α n` to another value of the same type, with the same `n`.
 And `Vec.zip`, which pairs up elements from two lists into a list of pairs, could require its two arguments to have the same length.
@@ -72,6 +77,10 @@ The definitions below introduces conversions between lists and vectors:
 def listOfVec {α : Type} : ∀{n : Nat}, Vec α n → List α
   | _, Vec.nil => []
   | _, Vec.cons a v => a :: listOfVec v
+
+def listOfVec' {α : Type} {n : Nat} : Vec α n → List α
+  | Vec.nil => []
+  | Vec.cons a v => a :: listOfVec' v
 
 def vecOfList {α : Type} : ∀xs : List α, Vec α (List.length xs)
   | [] => Vec.nil
@@ -92,7 +101,10 @@ theorem length_listOfVec {α : Type} (n : Nat) (v : Vec α n)
     : List.length (listOfVec v) = n := by
   induction v with
   | nil => rfl
-  | cons a v' ih => simp [listOfVec]; exact ih
+  | cons a v' ih =>
+    unfold listOfVec
+    unfold List.length
+    rw [ih]
 
 /-
 In expositions of list types, we usually see the length function defined first, but here that would not be a very productive function to code.
@@ -168,7 +180,16 @@ Let's try proving other properties between lists and vectors.
 
 theorem listOfVec_reverse α l
     : @listOfVec α (List.length l) (vecOfList l) = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons x xs ih =>
+    unfold vecOfList
+    unfold listOfVec
+    rw [ih]
+
+-- theorem vecOfList_reverse α n v
+--     : vecOfList (listOfVec v) = v := by
+--   sorry
 
 /-
 ## references
