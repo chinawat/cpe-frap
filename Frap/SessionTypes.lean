@@ -136,7 +136,7 @@ _Proof_: Literally the same proof as the last theorem.
 ## Multiparty session types
 
 New complications arise when more than two parties are communicating in a protocol.
-In a case of an online merchant, for instance, a custober can send orders to the merchant, and a warehouse may be asked by the merchant to be sure a product is in stock.
+In a case of an online merchant, for instance, a customer can send orders to the merchant, and a warehouse may be asked by the merchant to be sure a product is in stock.
 Many other such examples appear in the real world.
 
 ### Example communication: online store with warehouse
@@ -184,7 +184,7 @@ Many other such examples appear in the real world.
 ```
 
 Now it is no longer possible to start from one party's view of a protocol and compute any other party's view.
-THe reason is that each message only involves two parties.
+The reason is that each message only involves two parties.
 Any other party will not see that message in its own session type, making it impossible to preserve that message in a complement-like operation.
 
 Instead, we define one global session type that includes only "send" operations.
@@ -242,7 +242,7 @@ That flag is reset to false in recursive premises, since we only use the flag to
 The third rule is crucial: it applies to a process that is not participating in the next step of the protocol.
 That is, we look up the owners of the channel that comes next, and we verify that neither owner is `α`.
 In this case, we merely proceed to the next protocol step, leaving the process unchanged.
-Crucially, we must be prepared for any value that might be exchanged in this skipped step, even though we do not see it ourselves.
+Crucially, we must be prep  ared for any value that might be exchanged in this skipped step, even though we do not see it ourselves.
 
 Why does the last premise of the third rule set the boolean flag, forcing the next action to be a receive?
 Otherwise, at some point in the protocol, we could have multiple parties trying to send messages.
