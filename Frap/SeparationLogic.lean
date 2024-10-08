@@ -215,6 +215,230 @@ The _partial correctness specification_ `{p} c {q}` is true iiff, starting in an
 This form if specification is so similar to that of Hoare logic that it is important to note the differences.
 Our specification is implicitly quantified over both stores and heaps, and also (since allocation is indeterminate) over all possible executions.
 Moreover, any execution (starting in a state satisfying `p`) that gives a memory fault falsifies partial specifications.
+
+The last point goes to the heart of separation logic: well-specified programs don't go wrong.
+As a consequence, during the execution of a program that has been proved to meet some specification (assuming that the program is only executed in initial states satisfying the precondition of the specification), it is unnecessary to check for memory faults, or even to equip heap cells with activity bits.
+
+In fact, it is not the implementor's responsibility to detect memory faults.
+It is the programmer's responsibility to avoid them---and separation logic is a tool for this purpose.
+Indeed, according to the logic, the implementor is free to implement memory faults however he wishes, since nothing can be proved that might gainsay him.
+
+Roughly speaking, the fact that specifications precludes memory faults acts in concert with the indeterminacy of allocation to prohibit violations of record boundaries.
+For example, during an execution of
+  `c₀; x := cons(1, 2); c₁; [x+2] := 7`,
+no allocation performed by the subcommand `c₀` or `c₁` can be guaranteed to allocate the location `x+2`; thus as long as `c₀` and `c₁` terminate and `c₁` does not modify `x`, there is a possibility that the execution will abort.
+It follows that there is no postcondition that makes the following specification valid:
+  `{true}  c₀; x := cons(1, 2); c₁; [x+2] := 7  {?}`.
+
+Sometimes, however, the notion of record boundaries dissolves, as in the following valid (and provable) specification of a program that tries to form a two-field record by gluing together two one-field records:
+```
+    {x ↦ - * y ↦ -}
+  if y = x+1 then skip  // already consecutive
+  else if x = y+1 then x := y  // consecutive but order switched
+  else (dispose x; dispose y; x := cons(1, 2))  // build from scratch
+    {x ↦ -,-}
+```
+It is evident that such a program goes well beyond the discipline imposed by type systems for mutable data structures.
+
+In our new setting, the command-specific inference rules of Hoare logic remain sound, as do such structural rules as
+* Consequence
+  ```
+    p → p'     {p'} c {q'}     q' → q
+    ---------------------------------
+                {p} c {q}
+  ```
+* Existential quantification (ghost variable elimination)
+  ```
+        {p} c {q}
+    -----------------
+    {∃v: p} c {∃v: q}
+  ```
+  where `v` is not free in `c`.
+* Conjunction
+  ```
+    {p} c {q₁}     {p} c {q₂}
+    -------------------------
+         {p} c {q₁ ∧ q₂}
+  ```
+
+An exception is what is sometimes called the "rule of constancy":
+```
+      {p} c {q}
+  ----------------- (unsound)
+  {p ∧ r} c {q ∧ r}
+```
+where no variable occurring free in `r` is modified by `c`.
+It has long been understood that this rule is vital for scalability, since it permits one to extend a "local" specification of `c`, involving only the variables actually used by that command, by adding arbitrary predicates about variables that are not modified by `c` and will therefore be preserved by its execution.
+
+Surprisingly, however, the rule of constancy becomes unsound when one moves from traditional Hoare logic to separatin logic.
+For example, the conclusion of the instance
+```
+          {x ↦ -}  [x] := 4  {x ↦ 4}
+  ------------------------------------------
+  {x ↦ - ∧ y ↦ 3}  [x] := 4  {x ↦ 4 ∧ y ↦ 3}
+```
+is not valid, since its precondition does not preclude the case `x = y`, where aliasing will falsify `y ↦ 3` when the mutation command is executed.
+(Indeed, this precondition implies `x = y`.)
+
+O'Hearned realized, however, that the ability to extend local specifications can be regained at a deeper level by using separating conjunction.
+In place of the rule of constancy, he proposed the _frame rule_:
+* Frame rule
+  ```
+        {p} c {q}
+    -----------------
+    {p * r} c {q * r}
+  ```
+  where no variable occurring free in `r` is modified by `c`.
+By using the frame rule, one can extend a local specification, involving only the variables _and heap cells_ that may actually be used by `c` (which O'Hearn calls the _footprint_ of `c`), by adding arbitrary predicates about variables and heap cells that are not modified or mutated by `c`.
+Thus, the frame rule is the key to "local reasoning" about the heap:
+  To understand how a program works, it should be possible for reasoning and specification to be confined to the cells that the program actually accesses.
+  The value of any other cell will automatically remain unchanged.
+
+In any valid specification `{p} c {q}`, `p` must assert that the heap contains every cell in the footprint of `c` (except for cells that are freshly allocated by `c`); "locality" is the converse implication that every cell asserted to be contained in the heap belongs to the footprint.
+The role of the frame rule is to infer from a local specification of a command the more global specification appropriate to the possible larger footprint of an enclosing command.
+
+Beyond the rules of Hoare logic and the frame rule, there are inferene rules for each of the new heap-manipulating commands.
+Indeed, for each of these commands, we can give three kinds of rules: local, global, and backward-reasoning.
+
+For mutation, for example, the simplest rule is the local rule:
+* Mutation (local)
+```
+    --------------------------
+    {e ↦ -} [e] := e' {e ↦ e'}
+```
+  which specifies the effect of mutation on the single cell being mutated.
+  From this, one can use the frame rule to derive a global rule:
+* Mutation (global)
+```
+    --------------------------
+    {e ↦ - * r} [e] := e' {e ↦ e' * r}
+```
+  which also specifies that anything in the heap beyond the cell being mutated is left unchanged by the mutation.
+  (One can rederive the local rule from the global one by taking `r` to be `emp`.)
+Beyond these forms, there is also:
+* Mutation (backwards reasoning)
+```
+    -----------------------------------------
+    {(e ↦ -) * ((e ↦ e') -* p)} [e] := e' {p}
+```
+  which is called a _backward reasoning_ rule since, by substituting for `p`, one can find a precondition for any postcondition.
+
+A similar development works for deallocation, except that the global form is itself suitable for backward reasoning:
+* Deallocation (local)
+```
+    -----------------------
+    {e ↦ -} dispose e {emp}
+```
+* Deallocation (global, backwards reasoning)
+```
+    ---------------------------
+    {(e ↦ -) * r} dispose e {r}
+```
+
+In the same way, one can give equivalent local and global rules for allocation commands in the _nonoverwriting_ case where the old value of the variable being modified plays no role.
+* Allocation (nonoverwriting, local)
+```
+    -------------------------------------------
+    {emp} v := cons(e₁, ..., eₙ) {v ↦ e₁,...,eₙ}
+```
+  where `v` is not free in `e₁,...,eₙ`.
+* Allocation (nonoverwriting, global)
+```
+    -------------------------------------------
+    {r} v := cons(e₁, ..., eₙ) {(v ↦ e₁,...,eₙ) * r}
+```
+  where `v` is not free in `e₁,...,eₙ` or `r`.
+
+
+Of course, we also need more general rules for allocation commands `v := cons(e₁,...eₙ)`, where `v` occurs in `e₁,...eₙ` or the precondition, as well as a backward-reasoning rule for allocation, and rules for lookup (later).
+
+### Examples of decorated programs
+
+As a simple illustration of separation logic, the following is an annotated specification of the command that tries to glue together adjacent records from earlier:
+```
+      {x ↦ - * y ↦ -}
+  if y = x+1 then
+      {(x ↦ - * y ↦ -) ∧ y = x+1} -->
+      {x ↦ -, -}
+    skip
+      {x ↦ -, -}
+  else if x = y+1 then
+      {(x ↦ - * y ↦ -) ∧ x = y+1} -->
+      {y ↦ -, -}
+    x := y
+      {x ↦ -, -}
+  else
+      {x ↦ - * y ↦ -}
+    dispose x;
+      {y ↦ -}
+    dispose y;
+      {emp}
+    x:= cons(1, 2)
+      {x ↦ -,-}
+```
+
+A second example describes a command that uses allocation and mutation to construct a two-element cyclic structure containing relative addresses:
+```
+    {emp}
+  x := cons(a, a);
+    {x ↦ a,a}
+  y := cons(b, b);
+    {(x ↦ a,a) * (y ↦ b,b)} -->
+    {(x ↦ a,_) * (y ↦ b,_)}
+  [x+1] := y-x;
+    {(x ↦ a,y-x) * (y ↦ b,_)}
+  [y+1] := x-y;
+    {(x ↦ a,y-x) * (y ↦ b,x-y)} -->
+    {∃o: (x ↦ a,o) * (x+o ↦ b,-o)}
+```
+
+## Lists
+
+To specify a program adequately, it is usually necessary to describe more than the form of its structures or the sharing patterns between them; one must relate the states of the program to the abstract values that they denote.
+For instance, to specify the list-reversal program from earlier, it would hardly be enough to say that, "If `i` is a list before execution, then `j` will be a list afterwards."
+One needs to say that, "If `i` is a list representing the sequence `α` before execution, then afterwards `j` will be a list representing the sequence that is the reflection of `α`."
+
+To do so in general, it is necessary to define the set of abstract values (sequencees, in this case), along with their primitive operations, and then to define predicates on the abstract values inductively.
+Since these kinds of definitions are standard, we will treat them less formally than the novel aspects of our logic.
+
+Sequences and their primitive operations are an easy first example since they are a standard and well-understood mathematical concept, so that we can omit their definition.
+To denote the primitive operations, we write `[]` for the empty sequence, `a::β` for the composition of `a` followed by `β`, `rev(a)` for the reflection of `α`, and `αᵢ` for the i-th component of `α`.
+
+The simplest list structure for representing sequences is the _singly-linked_ list.
+To describe this representation, we write `list α i` when `i` is a list representing the sequence `α`.
+
+It is straightforward to define this predicate by induction on the structure of `α`:
+  `list [] i ≝ emp ∧ i = nil`
+  `list (a::α) i ≝ ∃j: i ↦ a,j * list α j`
+and to derive a test whether the list represents an empty sequence:
+  `list α i → (i = nil ↔ α = [])`
+
+Then the following is a decorated program for reversing a list, where Greek letters appearing in the assertions are used as variables denoting sequences.
+```
+      {list α₀ i} -->
+      {list α₀ i * (emp ∧ nil = nil)}
+  j := nil;
+      {list α₀ i * (emp ∧ j = nil)} -->
+      {list α₀ i * list [] j} -->
+      {∃α,β: (list α i * list β j) ∧ rev(α₀) = rev(α)++β}
+  while i != nil do
+        {(∃α,β: (list α i * list β j) ∧ rev(α₀) = rev(α)++β) ∧ i ≠ nil} -->
+        {∃a,α',β: (list (a:α') i * list β j) ∧ rev(α₀) = rev(a:α')++β} -->
+        {∃a,α',β,k: (i ↦ a,k * list α' k * list β j) ∧ rev(α₀) = rev(a:α')++β}
+    k := [i+1];
+        {∃a,α',β: (i ↦ a,k * list α' k * list β j) ∧ rev(α₀) = rev(a:α')++β}
+    [i+1] := j
+        {∃a,α',β: (i ↦ a,j * list α' k * list β j) ∧ rev(α₀) = rev(a:α')++β} -->
+        {∃a,α',β: (list α' k * list (a::β) i) ∧ rev(α₀) = rev(α')++(a::β)} -->
+        {∃α',β': (list α' k * list β' i) ∧ rev(α₀) = rev(α')++β'}
+    j := i;
+        {∃α',β': (list α' k * list β' j) ∧ rev(α₀) = rev(α')++β'}
+    i := k;
+        {∃α',β': (list α' i * list β' j) ∧ rev(α₀) = rev(α')++β'}
+      {(∃α,β: (list α i * list β j) ∧ rev(α₀) = rev(α)++β) ∧ i = nil} -->
+      {∃α,β: list β j ∧ rev(α₀) = rev(α)++β ∧ α = []} -->
+      {list rev(α₀) j}
+```
 -/
 
 /-
