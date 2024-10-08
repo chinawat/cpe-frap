@@ -4,7 +4,7 @@
 Separation logic is a novel system for reasoning about imperative programs.
 Developed by O'Hearn, Reynolds, and Yang in 2001, it extends Hoare logic with enriched assertions that can describe the separation of storage and other resources concisely.
 The original goal of the logic was to facilitate reasoning about shared mutable data structures, i.e., structures where updatable fields can be referenced from more than one point (aliasing).
-More recently, the logic has been extended to deal with shared-variable concurrency and information hiding, and the notion of separation has proven applicable to a wiider conceptual range, where access to memory is replaced by permission to exercise capabilities, or by knowledge of structure.
+More recently, the logic has been extended to deal with shared-variable concurrency and information hiding, and the notion of separation has proven applicable to a wider conceptual range, where access to memory is replaced by permission to exercise capabilities, or by knowledge of structure.
 In a few years, the logic has become a significant research area, wiith a growing literature produced by a variety of researchers.
 
 ## The programming language
@@ -303,7 +303,7 @@ Indeed, for each of these commands, we can give three kinds of rules: local, glo
 For mutation, for example, the simplest rule is the local rule:
 * Mutation (local)
 ```
-    --------------------------
+    ---------------------------
     {e ↦ -} [e] := e' {e ↦ e'}
 ```
   which specifies the effect of mutation on the single cell being mutated.
@@ -359,14 +359,14 @@ As a simple illustration of separation logic, the following is an annotated spec
       {x ↦ - * y ↦ -}
   if y = x+1 then
       {(x ↦ - * y ↦ -) ∧ y = x+1} -->
-      {x ↦ -, -}
+      {x ↦ -,-}
     skip
-      {x ↦ -, -}
+      {x ↦ -,-}
   else if x = y+1 then
       {(x ↦ - * y ↦ -) ∧ x = y+1} -->
-      {y ↦ -, -}
+      {y ↦ -,-}
     x := y
-      {x ↦ -, -}
+      {x ↦ -,-}
   else
       {x ↦ - * y ↦ -}
     dispose x;
