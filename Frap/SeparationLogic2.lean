@@ -78,11 +78,11 @@ The effect of O'Hearn's inference rule for critical regions is that the resource
   put(x) = with buf when ¬full do
                        {(R * x ↦ -,-) ∧ ¬full} -->
                        {emp * x ↦ -,-} -->
-                       {x ↦ -,-)}
+                       {x ↦ -,-}
              c := x;
-                       {c ↦ -,-)}
+                       {c ↦ -,-}
              full := true;
-                       {full ∧ c ↦ -,-)} -->
+                       {full ∧ c ↦ -,-} -->
                        {R} -->
                        {R * emp}
                      {emp}
@@ -92,11 +92,11 @@ The effect of O'Hearn's inference rule for critical regions is that the resource
   get(y) = with buf when full do
                        {(R * emp) ∧ full} -->
                        {c ↦ -,- * emp} -->
-                       {c ↦ -,-)}
+                       {c ↦ -,-}
              y := c;
-                       {y ↦ -,-)}
+                       {y ↦ -,-}
              full := false;
-                       {¬full ∧ y ↦ -,-)} -->
+                       {¬full ∧ y ↦ -,-} -->
                        {(¬full * emp) ∧ y ↦ -,-)} -->
                        {R ∧ y ↦ -,-)} -->
                      {y ↦ -,-}

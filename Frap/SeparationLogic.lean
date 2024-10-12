@@ -78,7 +78,7 @@ LREV(i):
 The invariant of this program must state that `i` and `j` are lists representing two sequences α and β such that the reverse of the initial value α₀ can be obtained by concatenating the reverse of α onto β:
   `∃α,β: list α i ∧ list β j ∧ rev(α₀) = rev(α)++β`,
 where the predicate `list α i` is defined inductively on the length of α:
-  `list [] i ≝ i = nil`  `list (a::α) i ≝ ∃j: i ↪ a,j ∧ list α j`
+  `list [] i ≝ i = nil`  `list (a:α) i ≝ ∃j: i ↪ a,j ∧ list α j`
 (and ↪ can be read as "points to").
 
 Unfortunately, however, this is not enough, since the program will malfunction if there is any sharing between the lists `i` and `j`.
@@ -402,14 +402,14 @@ To do so in general, it is necessary to define the set of abstract values (seque
 Since these kinds of definitions are standard, we will treat them less formally than the novel aspects of our logic.
 
 Sequences and their primitive operations are an easy first example since they are a standard and well-understood mathematical concept, so that we can omit their definition.
-To denote the primitive operations, we write `[]` for the empty sequence, `a::β` for the composition of `a` followed by `β`, `rev(a)` for the reflection of `α`, and `αᵢ` for the i-th component of `α`.
+To denote the primitive operations, we write `[]` for the empty sequence, `a:β` for the composition of `a` followed by `β`, `rev(α)` for the reflection of `α`, and `αᵢ` for the i-th component of `α`.
 
 The simplest list structure for representing sequences is the _singly-linked_ list.
 To describe this representation, we write `list α i` when `i` is a list representing the sequence `α`.
 
 It is straightforward to define this predicate by induction on the structure of `α`:
   `list [] i ≝ emp ∧ i = nil`
-  `list (a::α) i ≝ ∃j: i ↦ a,j * list α j`
+  `list (a:α) i ≝ ∃j: i ↦ a,j * list α j`
 and to derive a test whether the list represents an empty sequence:
   `list α i → (i = nil ↔ α = [])`
 
@@ -429,7 +429,7 @@ Then the following is a decorated program for reversing a list, where Greek lett
         {∃a,α',β: (i ↦ a,k * list α' k * list β j) ∧ rev(α₀) = rev(a:α')++β}
     [i+1] := j
         {∃a,α',β: (i ↦ a,j * list α' k * list β j) ∧ rev(α₀) = rev(a:α')++β} -->
-        {∃a,α',β: (list α' k * list (a::β) i) ∧ rev(α₀) = rev(α')++(a::β)} -->
+        {∃a,α',β: (list α' k * list (a:β) i) ∧ rev(α₀) = rev(α')++(a:β)} -->
         {∃α',β': (list α' k * list β' i) ∧ rev(α₀) = rev(α')++β'}
     j := i;
         {∃α',β': (list α' k * list β' j) ∧ rev(α₀) = rev(α')++β'}
